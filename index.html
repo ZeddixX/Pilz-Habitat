@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilz-Habitat-Finder</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: system-ui, -apple-system, sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        .control-panel {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 12px 16px; border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 90vw;
+        }
+        input, select, button { width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+        button { background-color: #2e7d32; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { background-color: #1b5e20; }
+        .search-box { display: flex; gap: 4px; margin-top: 6px; }
+        .search-box input { margin-top: 0; flex: 1; }
+        .search-box button { margin-top: 0; width: auto; padding: 8px 12px; }
+        #status { margin-top: 8px; font-size: 12px; font-weight: bold; }
+
+        /* Popup-Styling */
+        .leaflet-popup-content { margin: 12px 14px; min-width: 200px; }
+        .weather-popup h3 { margin: 0 0 8px 0; font-size: 15px; color: #1a1a1a; }
+        .weather-popup .mm { font-size: 22px; font-weight: 700; margin: 4px 0; }
+        .weather-popup .prognose {
+            font-size: 14px; font-weight: 600; margin-top: 6px;
+            padding: 6px 10px; border-radius: 6px; display: inline-block;
+        }
+        .prognose-niedrig { background: #ffebee; color: #c62828; }
+        .prognose-mittel  { background: #fff8e1; color: #f9a825; }
+        .prognose-hoch    { background: #e8f5e9; color: #2e7d32; }
+        .weather-popup .hint { font-size: 11px; color: #666; margin-top: 8px; line-height: 1.3; }
+    </style>
+</head>
+<body>
+
+<div class="control-panel">
+    <!-- Städtesuche -->
+    <label for="citySearch"><strong>Ort / Stadt suchen:</strong></label>
+    <div class="search-box">
+        <input type="text" id="citySearch" placeholder="z. B. Lüneburg, Elmshorn...">
+        <button id="searchBtn">Suchen</button>
+    </div>
+
+    <!-- Pilzauswahl -->
+    <label for="pilzSelect" style="display:block; margin-top: 8px;"><strong>Pilz-Habitat suchen:</strong></label>
+    <select id="pilzSelect">
+        <option value="">-- Pilz auswählen --</option>
+        <option value="marone">Maronen-Röhrling (Nadelwald)</option>
+        <option value="steinpilz">Steinpilz (Laub-/Mischwald)</option>
+        <option value="fliegenpilz">🍄 Fliegenpilz (Nadel-/Mischwald)</option>
+        <option value="parasol">Parasol (Wiesen-/Lichtungen/Mischwald)</option>
+        <option value="birkenpilz">Birkenpilz (Bei Birken / Laubwald)</option>
+        <option value="pfifferling">Pfifferling (Saurer Nadel-/Laubwald)</option>
+    </select>
+
+    <button id="locBtn">📍 Mein Standort</button>
+    
+    <div id="status" style="color: #666;">Suche einen Ort oder zoome manuell heran.</div>
+</div>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Karte Startposition (Hamburg / Umgebung)
+    const map = L.map('map').setView([53.57, 10.15], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    let forestLayer = L.layerGroup().addTo(map);
+    let userMarker = null;
+
+    // ============================================================
+    // Städtesuche via OpenStreetMap Nominatim API
+    // ============================================================
+    async function searchCity() {
+        const query = document.getElementById('citySearch').value.trim();
+        const status = document.getElementById('status');
+
+        if (!query) return;
+
+        status.style.color = "orange";
+        status.innerText = "Suche Ort...";
+
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+            const res = await fetch(url, { headers: { 'User-Agent': 'PilzFinderApp/1.0' } });
+            const data = await res.json();
+
+            if (data.length === 0) {
+                status.style.color = "red";
+                status.innerText = "Ort nicht gefunden.";
+                return;
+            }
+
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+
+            map.setView([lat, lon], 12);
+
+            status.style.color = "green";
+            status.innerText = `Ort gefunden: ${data[0].display_name.split(',')[0]}. Wähle deinen Pilz!`;
+
+            // Falls schon ein Pilz ausgewählt war, direkt neu laden
+            const selectedPilz = document.getElementById('pilzSelect').value;
+            if (selectedPilz) {
+                triggerPilzFetch(selectedPilz);
+            }
+
+        } catch (err) {
+            status.style.color = "red";
+            status.innerText = "Fehler bei der Ortssuche.";
+        }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', searchCity);
+    document.getElementById('citySearch').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchCity();
+    });
+
+    // ============================================================
+    // Standort-Finder (GPS)
+    // ============================================================
+    document.getElementById('locBtn').addEventListener('click', () => {
+        const status = document.getElementById('status');
+        status.style.color = "orange";
+        status.innerText = "Ermittle Standort...";
+
+        if (!navigator.geolocation) {
+            status.style.color = "red";
+            status.innerText = "GPS auf diesem Gerät nicht unterstützt.";
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                map.setView([lat, lon], 13);
+
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup("Du bist hier!").openPopup();
+
+                status.style.color = "green";
+                status.innerText = "Standort gefunden! Wähle jetzt deinen Pilz.";
+
+                const selectedPilz = document.getElementById('pilzSelect').value;
+                if (selectedPilz) triggerPilzFetch(selectedPilz);
+            },
+            () => {
+                status.style.color = "red";
+                status.innerText = "Standortzugriff verweigert oder nicht verfügbar.";
+            }
+        );
+    });
+
+    // ============================================================
+    // Open-Meteo Wetter-API
+    // ============================================================
+    async function fetchRainSum(lat, lon) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&daily=precipitation_sum&timezone=auto`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Wetter-API Fehler');
+        const data = await res.json();
+        const sums = data.daily?.precipitation_sum || [];
+        const total = sums.reduce((a, b) => a + (b || 0), 0);
+        return Math.round(total * 10) / 10;
+    }
+
+    function getPrognose(mm) {
+        if (mm < 10) return { text: 'Niedrig 🔴 (Zu trocken)', css: 'prognose-niedrig' };
+        else if (mm <= 25) return { text: 'Mittel 🟡 (Gute Chancen)', css: 'prognose-mittel' };
+        else return { text: 'Hoch 🟢 (Optimale Bedingungen!)', css: 'prognose-hoch' };
+    }
+
+    function createPopupHtml(mm, prognose) {
+        return `
+            <div class="weather-popup">
+                <h3>Niederschlag (letzte 10 Tage)</h3>
+                <div class="mm">${mm} mm</div>
+                <div class="prognose ${prognose.css}">${prognose.text}</div>
+                <div class="hint">Daten: Open-Meteo<br>Klickpunkt-Koordinaten verwendet.</div>
+            </div>
+        `;
+    }
+
+    // ============================================================
+    // Overpass API Query
+    // ============================================================
+    function fetchForests(filterTag) {
+        const status = document.getElementById('status');
+        
+        if (map.getZoom() < 11) {
+            status.style.color = "red";
+            status.innerText = "Bitte zoome noch etwas näher heran!";
+            return;
+        }
+
+        status.style.color = "orange";
+        status.innerText = "Lade Wälder aus OpenStreetMap...";
+        forestLayer.clearLayers();
+
+        const bounds = map.getBounds();
+        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+        const overpassUrl = 'https://overpass-api.de/api/interpreter';
+        
+        const query = `[out:json][timeout:15];
+            (
+              way["landuse"="forest"]${filterTag}(${bbox});
+              relation["landuse"="forest"]${filterTag}(${bbox});
+              way["natural"="wood"]${filterTag}(${bbox});
+              relation["natural"="wood"]${filterTag}(${bbox});
+            );
+            out body; >; out skel qt;`;
+
+        fetch(overpassUrl, {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(query)
+        })
+        .then(res => res.json())
+        .then(data => {
+            const geojson = osmtogeojson(data);
+            if (!geojson.features || geojson.features.length === 0) {
+                status.style.color = "red";
+                status.innerText = "Keine passenden Waldflächen im Ausschnitt.";
+                return;
+            }
+
+            L.geoJSON(geojson, {
+                style: { color: "#2e7d32", weight: 2, fillColor: "#4caf50", fillOpacity: 0.4 },
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', async function (e) {
+                        const lat = e.latlng.lat;
+                        const lon = e.latlng.lng;
+                        layer.bindPopup('<div style="padding:8px">Lade Niederschlagsdaten…</div>').openPopup(e.latlng);
+
+                        try {
+                            const mm = await fetchRainSum(lat, lon);
+                            const prognose = getPrognose(mm);
+                            layer.setPopupContent(createPopupHtml(mm, prognose));
+                        } catch (err) {
+                            layer.setPopupContent('<div style="padding:8px;color:#c62828">Wetterdaten konnten nicht geladen werden.</div>');
+                        }
+                    });
+                }
+            }).addTo(forestLayer);
+
+            status.style.color = "green";
+            status.innerText = `${geojson.features.length} Waldflächen gefunden! Klicke auf eine Fläche für die Prognose.`;
+        })
+        .catch(err => {
+            status.style.color = "red";
+            status.innerText = "Fehler beim Laden. Versuche es erneut.";
+        });
+    }
+
+    function osmtogeojson(data) {
+        let nodes = {};
+        data.elements.forEach(el => { if (el.type === 'node') nodes[el.id] = [el.lon, el.lat]; });
+        let features = [];
+        data.elements.forEach(el => {
+            if (el.type === 'way' && el.nodes) {
+                let coords = el.nodes.map(id => nodes[id]).filter(c => c !== undefined);
+                if (coords.length > 3) {
+                    if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) coords.push(coords[0]);
+                    features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: el.tags || {} });
+                }
+            }
+        });
+        return { type: "FeatureCollection", features: features };
+    }
+
+    function triggerPilzFetch(val) {
+        if (val === 'marone') fetchForests('["leaf_type"="needleleaved"]');
+        else if (val === 'steinpilz') fetchForests('["leaf_type"~"broadleaved|mixed"]');
+        else if (val === 'fliegenpilz') fetchForests('["leaf_type"~"needleleaved|mixed"]');
+        else if (val === 'parasol') fetchForests('');
+        else if (val === 'birkenpilz') fetchForests('["leaf_type"~"broadleaved|mixed"]');
+        else if (val === 'pfifferling') fetchForests('');
+        else {
+            forestLayer.clearLayers();
+            document.getElementById('status').innerText = "Suche einen Ort oder zoome manuell heran.";
+            document.getElementById('status').style.color = "#666";
+        }
+    }
+
+    // Dropdown Event
+    document.getElementById('pilzSelect').addEventListener('change', (e) => {
+        triggerPilzFetch(e.target.value);
+    });
+</script>
+
+</body>
+</html>
