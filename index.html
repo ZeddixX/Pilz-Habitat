@@ -2,76 +2,286 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pilz-Habitat-Finder</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #333; }
-        #map { height: 100vh; width: 100vw; }
-        .control-panel {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
-            padding: 12px 16px; border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2); max-width: 90vw; width: 320px;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        input, select, button { width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; }
-        button { background-color: #2e7d32; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { background-color: #1b5e20; }
-        .search-box { display: flex; gap: 4px; margin-top: 6px; }
-        .search-box input { margin-top: 0; flex: 1; }
-        .search-box button { margin-top: 0; width: auto; padding: 8px 12px; }
-        #status { margin-top: 8px; font-size: 11px; font-weight: bold; }
-        
-        .info-box {
-            margin-top: 8px; padding: 8px; background: #e8f5e9; border-left: 4px solid #2e7d32;
-            border-radius: 4px; font-size: 11px; line-height: 1.4; display: none;
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #121212; color: #1e293b;
+            overflow: hidden;
+        }
+        #map {
+            height: 100vh;
+            width: 100vw;
+            z-index: 1;
         }
 
-        /* Popup-Styling */
-        .leaflet-popup-content { margin: 12px 14px; min-width: 210px; }
-        .weather-popup h3 { margin: 0 0 6px 0; font-size: 15px; color: #1a1a1a; }
-        .weather-popup .mm { font-size: 22px; font-weight: 700; margin: 4px 0; color: #1b5e20; }
-        .weather-popup .prognose {
-            font-size: 12px; font-weight: 600; margin-top: 6px;
-            padding: 6px 10px; border-radius: 6px; display: inline-block;
+        /* Floating UI Container */
+        .app-card {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 1000;
+            width: calc(100% - 32px);
+            max-width: 380px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .prognose-niedrig { background: #ffebee; color: #c62828; }
-        .prognose-mittel  { background: #fff8e1; color: #f9a825; }
-        .prognose-hoch    { background: #e8f5e9; color: #2e7d32; }
-        .weather-popup .hint { font-size: 10px; color: #666; margin-top: 8px; line-height: 1.3; }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .app-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+        }
+
+        /* Search input group */
+        .search-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            font-size: 13.5px;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2064748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 36px;
+            font-weight: 500;
+        }
+
+        /* Action Buttons */
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+        .btn-primary:active {
+            background: #059669;
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-secondary:active {
+            background: #f8fafc;
+            transform: scale(0.98);
+        }
+
+        .btn-gps {
+            width: 100%;
+            background: #0284c7;
+            color: white;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+        }
+        .btn-gps:active {
+            background: #0369a1;
+            transform: scale(0.98);
+        }
+
+        /* Indicator & Info Cards */
+        .info-card {
+            margin-top: 12px;
+            padding: 12px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #f1f5f9;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .info-tag-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .info-tag {
+            font-size: 12px;
+            line-height: 1.4;
+            color: #334155;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .badge-tree { background: #dcfce7; color: #166534; }
+        .badge-plant { background: #fef3c7; color: #92400e; }
+        .badge-soil { background: #f1f5f9; color: #475569; }
+
+        /* Status Bar */
+        #status {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Custom Leaflet Controls */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+            border-radius: 12px !important;
+            overflow: hidden;
+        }
+        .leaflet-control-zoom a {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(8px);
+            color: #0f172a !important;
+            border: none !important;
+        }
+
+        /* Clean Popups */
+        .leaflet-popup-content-wrapper {
+            border-radius: 16px !important;
+            padding: 4px !important;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.15) !important;
+        }
+        .weather-popup {
+            padding: 8px 4px;
+        }
+        .weather-popup h3 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .weather-popup .mm {
+            font-size: 26px;
+            font-weight: 800;
+            color: #10b981;
+            margin: 2px 0;
+        }
+        .weather-popup .prognose {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .prognose-niedrig { background: #fee2e2; color: #991b1b; }
+        .prognose-mittel  { background: #fef3c7; color: #92400e; }
+        .prognose-hoch    { background: #dcfce7; color: #166534; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
 
-<div class="control-panel">
-    <!-- Ortssuche -->
-    <label for="citySearch"><strong>Ort / Stadt suchen:</strong></label>
-    <div class="search-box">
-        <input type="text" id="citySearch" placeholder="z. B. Elmshorn, Sachsenwald...">
-        <button id="searchBtn">Suchen</button>
+<div class="app-card">
+    <div class="app-header">
+        <h1 class="app-title">🌲 Habitat Finder</h1>
     </div>
 
-    <button id="locBtn" style="background-color: #1565c0; margin-top: 8px;">📍 Mein Standort (GPS)</button>
+    <!-- Ortssuche -->
+    <div class="search-group">
+        <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
+        <button id="searchBtn" class="btn btn-primary">Suchen</button>
+    </div>
+
+    <button id="locBtn" class="btn btn-gps">📍 Standort verwenden</button>
 
     <!-- Pilzauswahl -->
-    <label for="pilzSelect" style="display:block; margin-top: 10px;"><strong>Pilz-Habitat wählen:</strong></label>
-    <select id="pilzSelect">
-        <option value="">-- Pilz wählen --</option>
-        <option value="steinpilz">🌲 Steinpilz (Fichten, Buchen, Eichen)</option>
-        <option value="marone">🌲 Maronen-Röhrling (Fichten, Kiefern)</option>
-        <option value="fliegenpilz">🍄 Fliegenpilz (Fichten, Birken)</option>
-        <option value="pfifferling">🌲 Pfifferling (Moos, Fichten, Buchen)</option>
-        <option value="birkenpilz">🌳 Birkenpilz (Ausschließlich Birken)</option>
-        <option value="parasol">🌾 Parasol (Lichtungen, Mischwald-Ränder)</option>
+    <select id="pilzSelect" class="input-field" style="width: 100%;">
+        <option value="">-- Pilzart auswählen --</option>
+        <option value="steinpilz">🍄 Steinpilz</option>
+        <option value="marone">🌲 Maronen-Röhrling</option>
+        <option value="fliegenpilz">🍄 Fliegenpilz (Zeigerpilz)</option>
+        <option value="pfifferling">🟡 Echter Pfifferling</option>
+        <option value="birkenpilz">🌳 Birkenpilz</option>
+        <option value="parasol">🌾 Parasol-Riesenschirmling</option>
     </select>
 
-    <!-- Info-Box für Baumbestand & Zeigerpflanzen -->
-    <div id="habitatInfo" class="info-box"></div>
+    <!-- Info-Box für Zeigerpflanzen & Bäume -->
+    <div id="habitatInfo" class="info-card"></div>
 
-    <div id="status" style="color: #666;">Suche einen Ort, nutze GPS oder zoome manuell.</div>
+    <div id="status">Suche einen Ort oder wähle direkt eine Pilzart.</div>
 </div>
 
 <div id="map"></div>
@@ -80,18 +290,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Offline-Cache-Initialisierung
+    // Offline-Cache-Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('data:text/javascript;charset=utf-8,' + encodeURIComponent(`
-                self.addEventListener('install', e => e.waitUntil(caches.open('pilz-v1').then(c => c.addAll(['/']))));
+                self.addEventListener('install', e => e.waitUntil(caches.open('pilz-v2').then(c => c.addAll(['/']))));
                 self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
             `)).catch(()=>{});
         });
     }
 
-    // Karte Initialisieren (Standard: Hamburg/Elmshorn-Region)
-    const map = L.map('map').setView([53.75, 9.65], 12);
+    // Karte Initialisieren (Default: Elmshorn / Hamburg Region)
+    const map = L.map('map', { zoomControl: false }).setView([53.75, 9.65], 12);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
@@ -100,65 +311,63 @@
     let forestLayer = L.layerGroup().addTo(map);
     let userMarker = null;
 
-    // Habitat-Datenbank mit Bäumen und Zeigerpflanzen
+    // Strukturiertes Habitat-Verzeichnis
     const HABITAT_DATA = {
         steinpilz: {
             tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]',
-            baeume: '🌲 Fichten, Buchen, Eichen, Kiefern',
-            zeiger: '🍄 Fliegenpilz (Bester Zeiger!), Heidelbeersträucher, Moos-Teppiche',
+            baeume: 'Fichten, Buchen, Eichen, Kiefern',
+            zeiger: 'Fliegenpilz, Heidelbeersträucher, Moosteppiche',
             boden: 'Saurer bis mäßig nährstoffreicher Boden'
         },
         marone: {
             tag: '["leaf_type"="needleleaved"]',
-            baeume: '🌲 Fichten & Kiefern',
+            baeume: 'Fichten, Kiefern',
             zeiger: 'Dichte Moospolster, Sauerklee, Heidelbeeren',
             boden: 'Saurer Nadelwaldboden'
         },
         fliegenpilz: {
             tag: '["leaf_type"~"needleleaved|mixed"]',
-            baeume: '🌲 Fichten & 🌳 Birken',
-            zeiger: '🍄 Zeigt verlässlich Steinpilze & Pfifferlinge an!',
+            baeume: 'Fichten, Birken',
+            zeiger: 'Zeigt verlässlich Steinpilze & Pfifferlinge an!',
             boden: 'Saurer, feuchter Waldboden'
         },
         pfifferling: {
             tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]',
-            baeume: '🌲 Fichten, Kiefern, Buchen',
+            baeume: 'Fichten, Kiefern, Buchen',
             zeiger: 'Moosreiche, lichte Stellen, Sauerklee',
-            boden: 'Nährstoffarmer, saurer Sand- oder Lehmboden'
+            boden: 'Nährstoffarmer, saurer Sand-/Lehmboden'
         },
         birkenpilz: {
             tag: '["leaf_type"~"broadleaved|mixed"]',
-            baeume: '🌳 Strikte Symbiose mit Birken!',
+            baeume: 'Ausschließlich Birken (Symbiose)',
             zeiger: 'Birkenhaine, Grasige Waldränder mit Birken',
             boden: 'Feuchte, saure Böden'
         },
         parasol: {
             tag: '',
-            baeume: '🌳 Mischwaldränder, Lichte Buchenbestände',
-            zeiger: 'Waldgräser, Brennnesseln (mag Nährstoffe), Lichtungen',
+            baeume: 'Mischwaldränder, lichte Buchenbestände',
+            zeiger: 'Waldgräser, Brennnesseln, Lichtungen',
             boden: 'Nährstoff- und humusreicher Boden'
         }
     };
 
-    // ============================================================
     // Städtesuche via Nominatim API
-    // ============================================================
     async function searchCity() {
         const query = document.getElementById('citySearch').value.trim();
         const status = document.getElementById('status');
 
         if (!query) return;
 
-        status.style.color = "#f57c00";
+        status.style.color = "#d97706";
         status.innerText = "Suche Ort...";
 
         try {
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-            const res = await fetch(url, { headers: { 'User-Agent': 'PilzHabitatFinderApp/1.0' } });
+            const res = await fetch(url, { headers: { 'User-Agent': 'PilzHabitatFinder/2.0' } });
             const data = await res.json();
 
             if (data.length === 0) {
-                status.style.color = "#d32f2f";
+                status.style.color = "#dc2626";
                 status.innerText = "Ort nicht gefunden.";
                 return;
             }
@@ -168,15 +377,15 @@
 
             map.setView([lat, lon], 12);
 
-            status.style.color = "#388e3c";
-            status.innerText = `Ort: ${data[0].display_name.split(',')[0]}. Wähle deinen Pilz!`;
+            status.style.color = "#059669";
+            status.innerText = `Ort: ${data[0].display_name.split(',')[0]}`;
 
             const selectedPilz = document.getElementById('pilzSelect').value;
             if (selectedPilz) triggerPilzFetch(selectedPilz);
 
         } catch (err) {
-            status.style.color = "#d32f2f";
-            status.innerText = "Fehler bei der Ortssuche.";
+            status.style.color = "#dc2626";
+            status.innerText = "Fehler bei Ortssuche.";
         }
     }
 
@@ -185,17 +394,15 @@
         if (e.key === 'Enter') searchCity();
     });
 
-    // ============================================================
-    // GPS-Standort
-    // ============================================================
+    // GPS-Ermittlung
     document.getElementById('locBtn').addEventListener('click', () => {
         const status = document.getElementById('status');
-        status.style.color = "#f57c00";
-        status.innerText = "Ermittle GPS-Standort...";
+        status.style.color = "#d97706";
+        status.innerText = "Ortung läuft...";
 
         if (!navigator.geolocation) {
-            status.style.color = "#d32f2f";
-            status.innerText = "GPS auf diesem Gerät nicht unterstützt.";
+            status.style.color = "#dc2626";
+            status.innerText = "GPS nicht verfügbar.";
             return;
         }
 
@@ -207,45 +414,40 @@
 
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.marker([lat, lon]).addTo(map)
-                    .bindPopup("<b>Du bist hier!</b>").openPopup();
+                    .bindPopup("<b>Dein Standpunkt</b>").openPopup();
 
-                status.style.color = "#388e3c";
-                status.innerText = "Standort gefunden! Wälder werden geladen...";
+                status.style.color = "#059669";
+                status.innerText = "Standort lokalisiert.";
 
                 const selectedPilz = document.getElementById('pilzSelect').value;
                 if (selectedPilz) triggerPilzFetch(selectedPilz);
             },
             () => {
-                status.style.color = "#d32f2f";
-                status.innerText = "Standortzugriff verweigert.";
+                status.style.color = "#dc2626";
+                status.innerText = "GPS-Zugriff verweigert.";
             },
             { enableHighAccuracy: true }
         );
     });
 
-    // ============================================================
-    // Open-Meteo Wetter-API (Mit Offline-Speicherung)
-    // ============================================================
+    // Wetter API (Rainfall Sum + Cache)
     async function fetchRainSum(lat, lon) {
         const cacheKey = `weather_${lat.toFixed(2)}_${lon.toFixed(2)}`;
         
         try {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&daily=precipitation_sum&timezone=auto`;
             const res = await fetch(url);
-            if (!res.ok) throw new Error('Wetter-API Fehler');
+            if (!res.ok) throw new Error('Wetter API Fehler');
             const data = await res.json();
             const sums = data.daily?.precipitation_sum || [];
             const total = Math.round((sums.reduce((a, b) => a + (b || 0), 0)) * 10) / 10;
             
-            // In LocalStorage sichern für Offline-Nutzung
             localStorage.setItem(cacheKey, JSON.stringify({ mm: total, time: Date.now() }));
             return total;
         } catch (err) {
-            // Falls Offline, aus Speicher laden
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
-                const parsed = JSON.parse(cached);
-                return parsed.mm + ' (Offline-Daten)';
+                return JSON.parse(cached).mm + ' (Offline)';
             }
             throw err;
         }
@@ -253,43 +455,39 @@
 
     function getPrognose(mm) {
         const val = parseFloat(mm);
-        if (isNaN(val) || val < 10) return { text: 'Niedrig 🔴 (Zu trocken)', css: 'prognose-niedrig' };
+        if (isNaN(val) || val < 10) return { text: 'Niedrig 🔴 (Trocken)', css: 'prognose-niedrig' };
         else if (val <= 25) return { text: 'Mittel 🟡 (Gute Chancen)', css: 'prognose-mittel' };
-        else return { text: 'Hoch 🟢 (Optimale Bedingungen!)', css: 'prognose-hoch' };
+        else return { text: 'Hoch 🟢 (Optimal!)', css: 'prognose-hoch' };
     }
 
     function createPopupHtml(mm, prognose) {
         return `
             <div class="weather-popup">
-                <h3>Niederschlag (10 Tage)</h3>
+                <h3>Regenmenge (10 Tage)</h3>
                 <div class="mm">${mm} mm</div>
                 <div class="prognose ${prognose.css}">${prognose.text}</div>
-                <div class="hint">Tippe auf Flächen im Wald für exakte Daten.</div>
             </div>
         `;
     }
 
-    // ============================================================
-    // Overpass API Query
-    // ============================================================
+    // Overpass API Walddaten abrufen
     function fetchForests(filterTag) {
         const status = document.getElementById('status');
         
         if (map.getZoom() < 11) {
-            status.style.color = "#d32f2f";
-            status.innerText = "Bitte zoome etwas näher an die Region heran!";
+            status.style.color = "#dc2626";
+            status.innerText = "Bitte näher heranzoomen!";
             return;
         }
 
-        status.style.color = "#f57c00";
-        status.innerText = "Lade Walddaten aus OpenStreetMap...";
+        status.style.color = "#d97706";
+        status.innerText = "Lade Habitate...";
         forestLayer.clearLayers();
 
         const bounds = map.getBounds();
         const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-        const overpassUrl = 'https://overpass-api.de/api/interpreter';
         
-        const query = `[out:json][timeout:15];
+        const query = `[out:json][timeout:25];
             (
               way["landuse"="forest"]${filterTag}(${bbox});
               relation["landuse"="forest"]${filterTag}(${bbox});
@@ -298,45 +496,56 @@
             );
             out body; >; out skel qt;`;
 
-        fetch(overpassUrl, {
+        fetch('https://overpass-api.de/api/interpreter', {
             method: 'POST',
             body: 'data=' + encodeURIComponent(query)
         })
         .then(res => res.json())
-        .then(data => {
-            const geojson = osmtogeojson(data);
-            if (!geojson.features || geojson.features.length === 0) {
-                status.style.color = "#d32f2f";
-                status.innerText = "Keine spezifischen Waldflächen im Ausschnitt.";
-                return;
-            }
-
-            L.geoJSON(geojson, {
-                style: { color: "#2e7d32", weight: 2, fillColor: "#4caf50", fillOpacity: 0.4 },
-                onEachFeature: function (feature, layer) {
-                    layer.on('click', async function (e) {
-                        const lat = e.latlng.lat;
-                        const lon = e.latlng.lng;
-                        layer.bindPopup('<div style="padding:8px">Lade Niederschlag…</div>').openPopup(e.latlng);
-
-                        try {
-                            const mm = await fetchRainSum(lat, lon);
-                            const prognose = getPrognose(mm);
-                            layer.setPopupContent(createPopupHtml(mm, prognose));
-                        } catch (err) {
-                            layer.setPopupContent('<div style="padding:8px;color:#c62828">Wetterdaten offline nicht verfügbar.</div>');
-                        }
-                    });
-                }
-            }).addTo(forestLayer);
-
-            status.style.color = "#388e3c";
-            status.innerText = `${geojson.features.length} Waldflächen gefunden! Tippe eine Fläche an.`;
-        })
-        .catch(err => {
-            status.style.color = "#d32f2f";
-            status.innerText = "Fehler beim Laden (Offline?).";
+        .then(data => renderGeoJson(data))
+        .catch(() => {
+            fetch('https://overpass.kumi.systems/api/interpreter', {
+                method: 'POST',
+                body: 'data=' + encodeURIComponent(query)
+            })
+            .then(res => res.json())
+            .then(data => renderGeoJson(data))
+            .catch(() => {
+                status.style.color = "#dc2626";
+                status.innerText = "Server antwortet nicht. Erneut tippen!";
+            });
         });
+    }
+
+    function renderGeoJson(data) {
+        const status = document.getElementById('status');
+        const geojson = osmtogeojson(data);
+        if (!geojson.features || geojson.features.length === 0) {
+            status.style.color = "#dc2626";
+            status.innerText = "Keine Waldflächen gefunden.";
+            return;
+        }
+
+        L.geoJSON(geojson, {
+            style: { color: "#059669", weight: 1.5, fillColor: "#10b981", fillOpacity: 0.35 },
+            onEachFeature: function (feature, layer) {
+                layer.on('click', async function (e) {
+                    const lat = e.latlng.lat;
+                    const lon = e.latlng.lng;
+                    layer.bindPopup('<div style="padding:6px;font-size:12px;">Messung läuft…</div>').openPopup(e.latlng);
+
+                    try {
+                        const mm = await fetchRainSum(lat, lon);
+                        const prognose = getPrognose(mm);
+                        layer.setPopupContent(createPopupHtml(mm, prognose));
+                    } catch (err) {
+                        layer.setPopupContent('<div style="padding:6px;color:#dc2626;font-size:12px;">Keine Wetterdaten.</div>');
+                    }
+                });
+            }
+        }).addTo(forestLayer);
+
+        status.style.color = "#059669";
+        status.innerText = `${geojson.features.length} Waldflächen identifiziert!`;
     }
 
     function osmtogeojson(data) {
@@ -362,20 +571,21 @@
             const data = HABITAT_DATA[val];
             infoBox.style.display = 'block';
             infoBox.innerHTML = `
-                <b>Baumbestand:</b> ${data.baeume}<br>
-                <b>Zeigerpflanzen/Indikatoren:</b> ${data.zeiger}<br>
-                <b>Boden:</b> ${data.boden}
+                <div class="info-tag-group">
+                    <div class="info-tag"><span class="badge badge-tree">Bäume</span> ${data.baeume}</div>
+                    <div class="info-tag"><span class="badge badge-plant">Zeiger</span> ${data.zeiger}</div>
+                    <div class="info-tag"><span class="badge badge-soil">Boden</span> ${data.boden}</div>
+                </div>
             `;
             fetchForests(data.tag);
         } else {
             infoBox.style.display = 'none';
             forestLayer.clearLayers();
-            document.getElementById('status').innerText = "Suche einen Ort oder zoome manuell.";
-            document.getElementById('status').style.color = "#666";
+            document.getElementById('status').innerText = "Wähle einen Ort oder eine Pilzart.";
+            document.getElementById('status').style.color = "#64748b";
         }
     }
 
-    // Dropdown Event
     document.getElementById('pilzSelect').addEventListener('change', (e) => {
         triggerPilzFetch(e.target.value);
     });
