@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilz-Habitat-Finder Pro</title>
+    <title>Pilz-Habitat-Finder Dark</title>
     
     <!-- PWA Integration -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#10b981">
+    <meta name="theme-color" content="#090d16">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,89 +19,164 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Inter', -apple-system, sans-serif; background: #121212; color: #1e293b; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; z-index: 1; }
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: #090d16; color: #f1f5f9; overflow: hidden; 
+        }
+        #map { height: 100vh; width: 100vw; z-index: 1; background: #090d16; }
         
-        /* Floating App Card */
+        /* Glassmorphism Dark App Card */
         .app-card { 
             position: absolute; top: 16px; left: 16px; z-index: 1000; 
             width: calc(100% - 32px); max-width: 380px; 
-            background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); 
-            border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 20px; padding: 16px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.18); max-height: 85vh; overflow-y: auto;
+            background: rgba(15, 23, 42, 0.88); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 16px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .app-title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; }
-        .search-group { display: flex; gap: 8px; margin-bottom: 10px; }
-        .input-field { flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 13.5px; color: #0f172a; outline: none; }
-        .input-field:focus { border-color: #10b981; }
-        select.input-field { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2064748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-weight: 500; }
+
+        .app-header { 
+            display: flex; align-items: center; justify-content: space-between; 
+            cursor: pointer; user-select: none;
+        }
+        .app-title { font-size: 16px; font-weight: 800; color: #34d399; margin: 0; display: flex; align-items: center; gap: 8px; }
         
-        /* Buttons */
-        .btn { border: none; border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
-        .btn-primary { background: #10b981; color: white; }
-        .btn-gps { width: 100%; background: #0284c7; color: white; margin-bottom: 8px; }
-        .btn-spot { width: 100%; background: #8b5cf6; color: white; margin-bottom: 10px; }
-        .btn-tile { position: absolute; bottom: 24px; left: 16px; z-index: 1000; background: #ffffff; color: #0f172a; font-weight: 700; padding: 10px 16px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); border: 1px solid #e2e8f0; }
+        /* Toggle Collapse Button */
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8; width: 32px; height: 32px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .toggle-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+        .collapsible-content {
+            margin-top: 14px;
+            display: flex; flex-direction: column; gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        /* Input fields in Dark Mode */
+        .search-group { display: flex; gap: 8px; }
+        .input-field { 
+            flex: 1; padding: 11px 14px; border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            background: rgba(30, 41, 59, 0.7); font-size: 13.5px; color: #f8fafc; outline: none; 
+            transition: border-color 0.2s;
+        }
+        .input-field::placeholder { color: #64748b; }
+        .input-field:focus { border-color: #34d399; box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2); }
         
-        /* Info Cards & Badges */
-        .info-card { margin-top: 10px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #f1f5f9; display: none; }
-        .info-tag-group { display: flex; flex-direction: column; gap: 6px; }
-        .info-tag { font-size: 12px; color: #334155; display: flex; align-items: flex-start; gap: 6px; }
-        .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 6px; flex-shrink: 0; }
-        .badge-tree { background: #dcfce7; color: #166534; }
-        .badge-plant { background: #fef3c7; color: #92400e; }
-        .badge-soil { background: #f1f5f9; color: #475569; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
+        select.input-field { 
+            appearance: none; 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2094a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+            background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; 
+            padding-right: 36px; font-weight: 600; color: #f1f5f9;
+        }
+        select.input-field option { background: #0f172a; color: #f1f5f9; }
         
-        #status { margin-top: 8px; font-size: 12px; font-weight: 500; color: #64748b; }
+        /* Styling Buttons */
+        .btn { 
+            border: none; border-radius: 12px; padding: 11px 14px; font-size: 13px; font-weight: 700; 
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
+            transition: transform 0.1s, background 0.2s; 
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .btn-primary:hover { background: #10b981; }
+        .btn-gps { width: 100%; background: #0284c7; color: white; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .btn-gps:hover { background: #0369a1; }
+        .btn-spot { width: 100%; background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
+        .btn-spot:hover { background: #8b5cf6; }
         
-        /* Weather Popups */
-        .leaflet-popup-content-wrapper { border-radius: 16px !important; padding: 4px !important; }
+        .btn-tile { 
+            position: absolute; bottom: 24px; left: 16px; z-index: 1000; 
+            background: rgba(15, 23, 42, 0.9); color: #f1f5f9; font-weight: 700; 
+            padding: 10px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
+        }
+        
+        /* Dark Info Cards & Badges */
+        .info-card { 
+            padding: 12px; background: rgba(30, 41, 59, 0.6); 
+            border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); display: none; 
+        }
+        .info-tag-group { display: flex; flex-direction: column; gap: 8px; }
+        .info-tag { font-size: 12px; color: #cbd5e1; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+        .badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; flex-shrink: 0; }
+        .badge-tree { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+        .badge-plant { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+        .badge-soil { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid rgba(203, 213, 225, 0.3); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+        
+        #status { font-size: 12px; font-weight: 500; color: #94a3b8; }
+        
+        /* Custom Spot Icon Style */
+        .custom-spot-icon {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        /* Leaflet Popups Dark */
+        .leaflet-popup-content-wrapper { 
+            background: rgba(15, 23, 42, 0.95) !important; color: #f8fafc !important;
+            border-radius: 16px !important; padding: 4px !important; 
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px);
+        }
+        .leaflet-popup-tip { background: rgba(15, 23, 42, 0.95) !important; }
         .weather-popup { padding: 8px 6px; }
-        .weather-popup h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 700; }
-        .weather-popup .mm { font-size: 24px; font-weight: 800; color: #10b981; }
-        .weather-popup .detail-row { font-size: 11px; color: #475569; margin-top: 3px; }
-        .weather-popup .prognose { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 8px; display: inline-block; margin-top: 6px; }
-        .prognose-niedrig { background: #fee2e2; color: #991b1b; }
-        .prognose-mittel  { background: #fef3c7; color: #92400e; }
-        .prognose-hoch    { background: #dcfce7; color: #166534; }
+        .weather-popup h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #f1f5f9; }
+        .weather-popup .mm { font-size: 24px; font-weight: 800; color: #34d399; }
+        .weather-popup .detail-row { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .weather-popup .prognose { font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 8px; display: inline-block; margin-top: 8px; }
+        .prognose-niedrig { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+        .prognose-mittel  { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+        .prognose-hoch    { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
     </style>
 </head>
 <body>
 
-<div class="app-card">
-    <div class="app-header">
-        <h1 class="app-title">🌲 Habitat Finder Pro</h1>
+<div class="app-card" id="appCard">
+    <div class="app-header" id="headerToggle">
+        <h1 class="app-title">🌲 Habitat Finder</h1>
+        <button class="toggle-btn" id="toggleIcon">▲</button>
     </div>
 
-    <!-- Ortssuche -->
-    <div class="search-group">
-        <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
-        <button id="searchBtn" class="btn btn-primary">Suchen</button>
+    <div class="collapsible-content" id="menuContent">
+        <!-- Ortssuche -->
+        <div class="search-group">
+            <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
+            <button id="searchBtn" class="btn btn-primary">Suchen</button>
+        </div>
+
+        <button id="locBtn" class="btn btn-gps">📍 Standort & Höhe ermitteln</button>
+        <button id="spotBtn" class="btn btn-spot">⭐ Geheimen Fundort speichern</button>
+
+        <!-- Pilzauswahl -->
+        <select id="pilzSelect" class="input-field" style="width: 100%;">
+            <option value="">-- Pilzart auswählen --</option>
+            <option value="steinpilz">🍄 Steinpilz</option>
+            <option value="marone">🌲 Maronen-Röhrling</option>
+            <option value="fliegenpilz">🍄 Fliegenpilz (Zeigerpilz)</option>
+            <option value="pfifferling">🟡 Echter Pfifferling</option>
+            <option value="birkenpilz">🌳 Birkenpilz</option>
+            <option value="parasol">🌾 Parasol-Riesenschirmling</option>
+        </select>
+
+        <!-- Habitat-Details -->
+        <div id="habitatInfo" class="info-card"></div>
+        <div id="status">Suche einen Ort oder wähle eine Pilzart.</div>
     </div>
-
-    <button id="locBtn" class="btn btn-gps">📍 Standort & Höhe ermitteln</button>
-    <button id="spotBtn" class="btn btn-spot">⭐ Geheimen Fundort speichern</button>
-
-    <!-- Pilzauswahl -->
-    <select id="pilzSelect" class="input-field" style="width: 100%;">
-        <option value="">-- Pilzart auswählen --</option>
-        <option value="steinpilz">🍄 Steinpilz</option>
-        <option value="marone">🌲 Maronen-Röhrling</option>
-        <option value="fliegenpilz">🍄 Fliegenpilz (Zeigerpilz)</option>
-        <option value="pfifferling">🟡 Echter Pfifferling</option>
-        <option value="birkenpilz">🌳 Birkenpilz</option>
-        <option value="parasol">🌾 Parasol-Riesenschirmling</option>
-    </select>
-
-    <!-- Habitat-Details -->
-    <div id="habitatInfo" class="info-card"></div>
-    <div id="status">Suche einen Ort oder wähle direkt eine Pilzart.</div>
 </div>
 
 <button id="mapToggle" class="btn-tile">🗺️ Satellit</button>
@@ -118,6 +193,23 @@
             navigator.serviceWorker.register('sw.js').catch(() => {});
         });
     }
+
+    // Einklapp-Funktion für das Menü
+    const headerToggle = document.getElementById('headerToggle');
+    const menuContent = document.getElementById('menuContent');
+    const toggleIcon = document.getElementById('toggleIcon');
+    let isCollapsed = false;
+
+    headerToggle.addEventListener('click', () => {
+        isCollapsed = !isCollapsed;
+        if (isCollapsed) {
+            menuContent.style.display = 'none';
+            toggleIcon.innerText = '▼';
+        } else {
+            menuContent.style.display = 'flex';
+            toggleIcon.innerText = '▲';
+        }
+    });
 
     // Karten-Layer (Standard & Satellit)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
@@ -159,7 +251,7 @@
             baeume: 'Fichten, Kiefern', 
             zeiger: 'Dichte Moospolster, Sauerklee, Heidelbeeren', 
             boden: 'Saurer Nadelwaldboden',
-            gefahr: '⚠️ Gallenröhrling (Röhren laufen auf Druck rosa an)'
+            gefahr: '⚠️ Gallenröhrling (Röhren laufen rosa an)'
         },
         fliegenpilz: { 
             tag: '["leaf_type"~"needleleaved|mixed"]', 
@@ -187,7 +279,7 @@
             baeume: 'Mischwaldränder, lichte Buchenbestände', 
             zeiger: 'Waldgräser, Brennnesseln, Lichtungen', 
             boden: 'Nährstoff- und humusreicher Boden',
-            gefahr: '⚠️ Gift-Riesenschirmling (Verschiebbarer Ring wichtig!)'
+            gefahr: '⚠️ Gift-Riesenschirmling (Verschiebbarer Ring!)'
         }
     };
 
@@ -205,10 +297,10 @@
             }).addTo(spotLayer);
 
             marker.bindPopup(`
-                <div style="padding:4px;">
+                <div style="padding:4px; color:#f8fafc;">
                     <b>⭐ Mein Fundort</b><br>
-                    <small>${spot.date}</small><br>
-                    <button onclick="deleteSpot(${index})" style="margin-top:6px; background:#fee2e2; color:#991b1b; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">Löschen</button>
+                    <small style="color:#94a3b8;">${spot.date}</small><br>
+                    <button onclick="deleteSpot(${index})" style="margin-top:6px; background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(248, 113, 113, 0.3); padding:4px 8px; border-radius:6px; cursor:pointer;">Löschen</button>
                 </div>
             `);
         });
@@ -352,17 +444,17 @@
         if (!geojson.features || geojson.features.length === 0) { status.innerText = "Keine Waldflächen gefunden."; return; }
         
         L.geoJSON(geojson, {
-            style: { color: "#059669", weight: 1.5, fillColor: "#10b981", fillOpacity: 0.35 },
+            style: { color: "#34d399", weight: 2, fillColor: "#10b981", fillOpacity: 0.3 },
             onEachFeature: function (feature, layer) {
                 layer.on('click', async function (e) {
-                    layer.bindPopup('<div style="padding:6px;">Berechne Habitat-Score…</div>').openPopup(e.latlng);
+                    layer.bindPopup('<div style="padding:6px; color:#cbd5e1;">Berechne Habitat-Score…</div>').openPopup(e.latlng);
                     try {
                         const weather = await fetchWeatherData(e.latlng.lat, e.latlng.lng);
                         const prognose = getPrognose(weather.rainTotal, weather.tempAvg);
                         layer.setPopupContent(`
                             <div class="weather-popup">
                                 <h3>Habitat-Analyse</h3>
-                                <div class="mm">${weather.rainTotal} mm <small style="font-size:12px;color:#64748b;">(10 Tage)</small></div>
+                                <div class="mm">${weather.rainTotal} mm <small style="font-size:12px;color:#94a3b8;">(10 Tage)</small></div>
                                 <div class="detail-row">🌡️ Ø Temp (10d): <b>${weather.tempAvg} °C</b></div>
                                 <div class="detail-row">⛰️ Meereshöhe: <b>~${weather.elevation} m</b></div>
                                 <div class="prognose ${prognose.css}">${prognose.text}</div>
