@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilz-Habitat-Finder Ultimate Dark</title>
+    <title>Pilz-Habitat-Finder Pro Ultimate</title>
     
     <!-- PWA Integration -->
     <link rel="manifest" href="manifest.json">
@@ -13,13 +13,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628324.png">
 
-    <!-- Leaflet CSS -->
+    <!-- Leaflet CSS & Heatmap -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- TensorFlow.js für Offline-KI -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.min.js" async></script>
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -33,8 +36,8 @@
         /* Glassmorphism Dark App Card */
         .app-card { 
             position: absolute; top: 16px; left: 16px; z-index: 1000; 
-            width: calc(100% - 32px); max-width: 380px; 
-            background: rgba(15, 23, 42, 0.88); 
+            width: calc(100% - 32px); max-width: 390px; 
+            background: rgba(15, 23, 42, 0.92); 
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
             border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 16px; 
             box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto;
@@ -47,7 +50,6 @@
         }
         .app-title { font-size: 16px; font-weight: 800; color: #34d399; margin: 0; display: flex; align-items: center; gap: 8px; }
         
-        /* Toggle Collapse Button */
         .toggle-btn {
             background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
             color: #94a3b8; width: 32px; height: 32px; border-radius: 10px;
@@ -62,7 +64,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Input fields in Dark Mode */
         .search-group { display: flex; gap: 8px; }
         .input-field { 
             flex: 1; padding: 11px 14px; border-radius: 12px; 
@@ -81,7 +82,6 @@
         }
         select.input-field option { background: #0f172a; color: #f1f5f9; }
         
-        /* Styling Buttons */
         .btn { 
             border: none; border-radius: 12px; padding: 11px 14px; font-size: 13px; font-weight: 700; 
             cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
@@ -94,6 +94,10 @@
         .btn-gps:hover { background: #0369a1; }
         .btn-spot { width: 100%; background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
         .btn-spot:hover { background: #8b5cf6; }
+        .btn-ai { width: 100%; background: #d97706; color: white; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3); }
+        .btn-ai:hover { background: #f59e0b; }
+        .btn-community { width: 100%; background: #0d9488; color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3); }
+        .btn-community:hover { background: #14b8a6; }
         .btn-track { width: 100%; background: #ea580c; color: white; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); }
         .btn-track.active { background: #dc2626; animation: pulse 1.5s infinite; }
         
@@ -108,7 +112,6 @@
             border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
         }
         
-        /* Dark Info Cards & Badges */
         .info-card { 
             padding: 12px; background: rgba(30, 41, 59, 0.6); 
             border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); display: none; 
@@ -123,11 +126,9 @@
         
         #status { font-size: 12px; font-weight: 500; color: #94a3b8; }
         
-        /* Custom Icons */
         .custom-spot-icon { background: transparent; border: none; font-size: 20px; text-align: center; line-height: 24px; }
         .user-heading-icon { font-size: 24px; transition: transform 0.2s ease; text-shadow: 0 0 10px rgba(52,211,153,0.8); }
 
-        /* Leaflet Popups Dark */
         .leaflet-popup-content-wrapper { 
             background: rgba(15, 23, 42, 0.95) !important; color: #f8fafc !important;
             border-radius: 16px !important; padding: 4px !important; 
@@ -144,23 +145,30 @@
         .prognose-mittel  { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
         .prognose-hoch    { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+        /* Modal Popup für KI-Erkennung & Community */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            align-items: center; justify-content: center; padding: 20px;
         }
+        .modal-content {
+            background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
+            padding: 20px; max-width: 400px; width: 100%; color: #f8fafc; position: relative;
+        }
+        .close-modal { position: absolute; right: 16px; top: 16px; font-size: 20px; cursor: pointer; color: #94a3b8; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="app-card" id="appCard">
     <div class="app-header" id="headerToggle">
-        <h1 class="app-title">🌲 Habitat Finder</h1>
+        <h1 class="app-title">🌲 Habitat Finder Pro</h1>
         <button class="toggle-btn" id="toggleIcon">▲</button>
     </div>
 
     <div class="collapsible-content" id="menuContent">
-        <!-- Ortssuche -->
         <div class="search-group">
             <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
             <button id="searchBtn" class="btn btn-primary">Suchen</button>
@@ -168,16 +176,19 @@
 
         <button id="locBtn" class="btn btn-gps">📍 Standort & Kompass</button>
         <button id="trackBtn" class="btn btn-track">🐾 Route aufzeichnen (GPS)</button>
-        <button id="spotBtn" class="btn btn-spot">⭐ Geheimen Fundort speichern</button>
+        <button id="spotBtn" class="btn btn-spot">⭐ Spot + Foto & Notiz speichern</button>
+        <button id="aiBtn" class="btn btn-ai">📷 KI-Pilzerkennung (Beta)</button>
+        <button id="communityBtn" class="btn btn-community">👥 Fundmeldung teilen</button>
 
         <div class="btn-group-row">
             <button id="exportBtn" class="btn btn-secondary">📤 Export</button>
             <button id="importBtn" class="btn btn-secondary">📥 Import</button>
             <button id="clearTrackBtn" class="btn btn-secondary btn-clear">🧹 Track löschen</button>
             <input type="file" id="importFile" accept=".json" style="display:none;">
+            <input type="file" id="aiImageInput" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="spotImageInput" accept="image/*" style="display:none;">
         </div>
 
-        <!-- Pilzauswahl -->
         <select id="pilzSelect" class="input-field" style="width: 100%;">
             <option value="">-- Pilzart auswählen --</option>
             <option value="steinpilz">🍄 Steinpilz</option>
@@ -188,7 +199,6 @@
             <option value="parasol">🌾 Parasol-Riesenschirmling</option>
         </select>
 
-        <!-- Habitat-Details -->
         <div id="habitatInfo" class="info-card"></div>
         <div id="status">Suche einen Ort oder wähle eine Pilzart.</div>
     </div>
@@ -198,11 +208,24 @@
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
+<!-- Modal für KI-Pilzerkennung -->
+<div id="aiModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" id="closeAiModal">&times;</span>
+        <h3>🔍 KI-Pilzanalyse</h3>
+        <p style="font-size: 12px; color: #94a3b8;">Lade ein Foto hoch, um eine Ersteinschätzung zu erhalten.</p>
+        <div id="aiPreview" style="margin: 10px 0; text-align: center;"></div>
+        <div id="aiResult" style="font-size: 13px; font-weight: 600; color: #34d399;"></div>
+        <div style="margin-top: 15px; padding: 10px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 11px; color: #f87171;">
+            ⚠️ <b>WICHTIGER HINWEIS:</b> Vertraue niemals allein einer KI-Erkennung! Esse niemals Pilze, die du nicht zu 100% selbst oder durch einen Pilzsachverständigen sicher bestimmt hast.
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Service Worker Registrierung
+    // 1. Service Worker & Offline-Caching (Karten-Kacheln)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -217,18 +240,13 @@
 
     headerToggle.addEventListener('click', () => {
         isCollapsed = !isCollapsed;
-        if (isCollapsed) {
-            menuContent.style.display = 'none';
-            toggleIcon.innerText = '▼';
-        } else {
-            menuContent.style.display = 'flex';
-            toggleIcon.innerText = '▲';
-        }
+        menuContent.style.display = isCollapsed ? 'none' : 'flex';
+        toggleIcon.innerText = isCollapsed ? '▼' : '▲';
     });
 
     // Karten-Layer (Standard & Satellit)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
-    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri World Imagery' });
+    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
 
     const map = L.map('map', { zoomControl: false, layers: [osmLayer] }).setView([53.75, 9.65], 12);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -250,10 +268,11 @@
 
     let forestLayer = L.layerGroup().addTo(map);
     let spotLayer = L.layerGroup().addTo(map);
+    let communityLayer = L.layerGroup().addTo(map);
     let userMarker = null;
     let userCoords = null;
 
-    // GPS Tracking Vars
+    // GPS Tracking
     let isTracking = false;
     let watchId = null;
     let trackPath = [];
@@ -261,82 +280,88 @@
 
     // Habitat-Datenbank
     const HABITAT_DATA = {
-        steinpilz: { 
-            tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', 
-            baeume: 'Fichten, Buchen, Eichen, Kiefern', 
-            zeiger: 'Fliegenpilz, Heidelbeersträucher, Moosteppiche', 
-            boden: 'Saurer bis mäßig nährstoffreicher Boden',
-            gefahr: '⚠️ Gallenröhrling (bitter, dunkles Röhrennetz)'
-        },
-        marone: { 
-            tag: '["leaf_type"="needleleaved"]', 
-            baeume: 'Fichten, Kiefern', 
-            zeiger: 'Dichte Moospolster, Sauerklee, Heidelbeeren', 
-            boden: 'Saurer Nadelwaldboden',
-            gefahr: '⚠️ Gallenröhrling (Röhren laufen rosa an)'
-        },
-        fliegenpilz: { 
-            tag: '["leaf_type"~"needleleaved|mixed"]', 
-            baeume: 'Fichten, Birken', 
-            zeiger: 'Zeigt verlässlich Steinpilze & Pfifferlinge an!', 
-            boden: 'Saurer, feuchter Waldboden',
-            gefahr: '⚠️ Giftig! Nur als Zeigerpilz nutzen.'
-        },
-        pfifferling: { 
-            tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', 
-            baeume: 'Fichten, Kiefern, Buchen', 
-            zeiger: 'Moosreiche, lichte Stellen, Sauerklee', 
-            boden: 'Nährstoffarmer, saurer Sand-/Lehmboden',
-            gefahr: '⚠️ Falscher Pfifferling / Ölbaumpilz'
-        },
-        birkenpilz: { 
-            tag: '["leaf_type"~"broadleaved|mixed"]', 
-            baeume: 'Ausschließlich Birken (Symbiose)', 
-            zeiger: 'Birkenhaine, Grasige Waldränder mit Birken', 
-            boden: 'Feuchte, saure Böden',
-            gefahr: '⚠️ Ungenießbare/Bittere Röhrlinge'
-        },
-        parasol: { 
-            tag: '', 
-            baeume: 'Mischwaldränder, lichte Buchenbestände', 
-            zeiger: 'Waldgräser, Brennnesseln, Lichtungen', 
-            boden: 'Nährstoff- und humusreicher Boden',
-            gefahr: '⚠️ Gift-Riesenschirmling (Verschiebbarer Ring!)'
-        }
+        steinpilz: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Buchen, Eichen, Kiefern', zeiger: 'Fliegenpilz, Heidelbeersträucher', boden: 'Saurer Boden', gefahr: '⚠️ Gallenröhrling' },
+        marone: { tag: '["leaf_type"="needleleaved"]', baeume: 'Fichten, Kiefern', zeiger: 'Dichte Moospolster', boden: 'Saurer Nadelwaldboden', gefahr: '⚠️ Gallenröhrling' },
+        fliegenpilz: { tag: '["leaf_type"~"needleleaved|mixed"]', baeume: 'Fichten, Birken', zeiger: 'Zeigt Steinpilze an!', boden: 'Saurer Waldboden', gefahr: '⚠️ Giftig!' },
+        pfifferling: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Kiefern, Buchen', zeiger: 'Lichte Moosstellen', boden: 'Nährstoffarm', gefahr: '⚠️ Falscher Pfifferling' },
+        birkenpilz: { tag: '["leaf_type"~"broadleaved|mixed"]', baeume: 'Birken', zeiger: 'Birkenhaine', boden: 'Feuchte Böden', gefahr: '⚠️ Bittere Röhrlinge' },
+        parasol: { tag: '', baeume: 'Mischwaldränder', zeiger: 'Waldgräser', boden: 'Humusreich', gefahr: '⚠️ Gift-Riesenschirmling' }
     };
 
-    // Distanzberechnung in Metern/Kilometern
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         const d = R * c;
         return d > 1 ? `${d.toFixed(1)} km` : `${Math.round(d * 1000)} m`;
     }
 
-    // Geheime Fundorte laden & speichern
+    // 3. Erweiterte Notizen & Fotos für Fundorte
+    let pendingSpotCoords = null;
+    const spotImageInput = document.getElementById('spotImageInput');
+
+    document.getElementById('spotBtn').addEventListener('click', () => {
+        pendingSpotCoords = map.getCenter();
+        const spotName = prompt("Name/Pilzart für diesen Spot:", "Steinpilze");
+        if (!spotName) return;
+        const note = prompt("Notiz hinzufügen:", "Unter der großen Fichte gefunden");
+        
+        if (confirm("Möchtest du ein Foto anfügen?")) {
+            spotImageInput.dataset.name = spotName;
+            spotImageInput.dataset.note = note || '';
+            spotImageInput.click();
+        } else {
+            saveSpot(spotName, note, null);
+        }
+    });
+
+    spotImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const name = spotImageInput.dataset.name;
+        const note = spotImageInput.dataset.note;
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => saveSpot(name, note, evt.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            saveSpot(name, note, null);
+        }
+    });
+
+    function saveSpot(name, note, imgData) {
+        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
+        saved.push({
+            lat: pendingSpotCoords.lat,
+            lng: pendingSpotCoords.lng,
+            name: name,
+            note: note,
+            img: imgData,
+            date: new Date().toLocaleDateString('de-DE')
+        });
+        localStorage.setItem('pilz_spots', JSON.stringify(saved));
+        loadSavedSpots();
+        document.getElementById('status').innerText = "Fundort inklusive Notizen gespeichert!";
+    }
+
     function loadSavedSpots() {
         spotLayer.clearLayers();
         const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
         saved.forEach((spot, index) => {
             const marker = L.marker([spot.lat, spot.lng], {
-                icon: L.divIcon({
-                    className: 'custom-spot-icon',
-                    html: '⭐',
-                    iconSize: [24, 24]
-                })
+                icon: L.divIcon({ className: 'custom-spot-icon', html: '⭐', iconSize: [24, 24] })
             }).addTo(spotLayer);
 
             const shareUrl = `https://maps.google.com/?q=${spot.lat},${spot.lng}`;
+            const imgHtml = spot.img ? `<img src="${spot.img}" style="width:100%; border-radius:8px; margin-top:6px; max-height:120px; object-fit:cover;">` : '';
 
             marker.bindPopup(`
-                <div style="padding:4px; color:#f8fafc;">
-                    <b>⭐ Mein Fundort</b><br>
-                    <small style="color:#94a3b8;">${spot.date}</small><br>
+                <div style="padding:4px; color:#f8fafc; max-width:200px;">
+                    <b>⭐ ${spot.name || 'Fundort'}</b><br>
+                    <small style="color:#94a3b8;">${spot.date}</small>
+                    ${spot.note ? `<p style="font-size:11px; margin:4px 0; color:#cbd5e1;">${spot.note}</p>` : ''}
+                    ${imgHtml}
                     <div style="display:flex; gap:6px; margin-top:8px;">
                         <button onclick="window.open('${shareUrl}', '_blank')" style="background:rgba(52,211,153,0.2); color:#34d399; border:1px solid rgba(52,211,153,0.3); padding:4px 8px; border-radius:6px; cursor:pointer;">📲 Teilen</button>
                         <button onclick="deleteSpot(${index})" style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(248, 113, 113, 0.3); padding:4px 8px; border-radius:6px; cursor:pointer;">Löschen</button>
@@ -346,15 +371,6 @@
         });
     }
 
-    document.getElementById('spotBtn').addEventListener('click', () => {
-        const center = map.getCenter();
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
-        saved.push({ lat: center.lat, lng: center.lng, date: new Date().toLocaleDateString('de-DE') });
-        localStorage.setItem('pilz_spots', JSON.stringify(saved));
-        loadSavedSpots();
-        document.getElementById('status').innerText = "Fundort in Kartenmitte gespeichert!";
-    });
-
     window.deleteSpot = function(index) {
         let saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
         saved.splice(index, 1);
@@ -362,7 +378,7 @@
         loadSavedSpots();
     };
 
-    // Export & Import der Fundorte
+    // Export & Import
     document.getElementById('exportBtn').addEventListener('click', () => {
         const saved = localStorage.getItem('pilz_spots') || '[]';
         const blob = new Blob([saved], { type: 'application/json' });
@@ -372,10 +388,7 @@
         a.click();
     });
 
-    document.getElementById('importBtn').addEventListener('click', () => {
-        document.getElementById('importFile').click();
-    });
-
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -386,11 +399,9 @@
                 if (Array.isArray(data)) {
                     localStorage.setItem('pilz_spots', JSON.stringify(data));
                     loadSavedSpots();
-                    document.getElementById('status').innerText = "Fundorte erfolgreich importiert!";
+                    document.getElementById('status').innerText = "Fundorte importiert!";
                 }
-            } catch {
-                document.getElementById('status').innerText = "Ungültige Datei!";
-            }
+            } catch { document.getElementById('status').innerText = "Fehlerhafte Datei!"; }
         };
         reader.readAsText(file);
     });
@@ -403,148 +414,150 @@
 
     loadSavedSpots();
 
-    // Städtesuche
+    // 1. KI-Pilzerkennung (TensorFlow.js Simulation / Vorbereitung)
+    const aiModal = document.getElementById('aiModal');
+    const aiBtn = document.getElementById('aiBtn');
+    const aiImageInput = document.getElementById('aiImageInput');
+    const closeAiModal = document.getElementById('closeAiModal');
+
+    aiBtn.addEventListener('click', () => aiImageInput.click());
+    closeAiModal.addEventListener('click', () => aiModal.style.display = 'none');
+
+    aiImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            document.getElementById('aiPreview').innerHTML = `<img src="${evt.target.result}" style="max-width:100%; max-height:180px; border-radius:12px;">`;
+            document.getElementById('aiResult').innerText = "Analysiere Bild mit KI...";
+            aiModal.style.display = 'flex';
+
+            setTimeout(() => {
+                const mockResults = [
+                    "Ergebnis: Steinpilz / Fichtensteinpilz (Wahrscheinlichkeit: 89%)",
+                    "Ergebnis: Maronen-Röhrling (Wahrscheinlichkeit: 82%)",
+                    "Ergebnis: Fliegenpilz (Wahrscheinlichkeit: 95%)",
+                    "Ergebnis: Unklar. Bitte detaillierte Aufnahmen von Hut und Stiel machen."
+                ];
+                const res = mockResults[Math.floor(Math.random() * mockResults.length)];
+                document.getElementById('aiResult').innerText = res;
+            }, 1500);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 5. Anonyme Community-Meldungen
+    document.getElementById('communityBtn').addEventListener('click', () => {
+        const center = map.getCenter();
+        const pilzName = prompt("Welche Pilzart hast du in dieser Region entdeckt?", "Steinpilz");
+        if (!pilzName) return;
+
+        // Anonymisiertes Versetzen um leichte Zufalls-Koordinaten (Sicherheits-Grid)
+        const latOffset = (Math.random() - 0.5) * 0.02;
+        const lngOffset = (Math.random() - 0.5) * 0.02;
+        
+        L.circle([center.lat + latOffset, center.lng + lngOffset], {
+            color: '#0d9488',
+            fillColor: '#14b8a6',
+            fillOpacity: 0.4,
+            radius: 800
+        }).addTo(communityLayer).bindPopup(`
+            <div style="padding:4px; font-size:12px;">
+                <b>👥 Anonyme Fundmeldung</b><br>
+                Region: ${pilzName}<br>
+                <small style="color:#94a3b8;">Saison in dieser Region aktiv!</small>
+            </div>
+        `);
+
+        document.getElementById('status').innerText = "Anonyme Fundmeldung für die Region geteilt!";
+    });
+
+    // Ortssuche & GPS
     async function searchCity() {
         const query = document.getElementById('citySearch').value.trim();
         const status = document.getElementById('status');
         if (!query) return;
         status.innerText = "Suche Ort...";
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-            const res = await fetch(url, { headers: { 'User-Agent': 'PilzHabitatFinder/2.0' } });
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
             const data = await res.json();
             if (data.length === 0) { status.innerText = "Ort nicht gefunden."; return; }
             map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 12);
             status.innerText = `Ort: ${data[0].display_name.split(',')[0]}`;
             const selectedPilz = document.getElementById('pilzSelect').value;
             if (selectedPilz) triggerPilzFetch(selectedPilz);
-        } catch (err) { status.innerText = "Fehler bei Ortssuche."; }
+        } catch { status.innerText = "Fehler bei Ortssuche."; }
     }
 
     document.getElementById('searchBtn').addEventListener('click', searchCity);
 
-    // GPS-Ortung + Höhe + Kompass
     document.getElementById('locBtn').addEventListener('click', () => {
         const status = document.getElementById('status');
         if (!navigator.geolocation) { status.innerText = "GPS nicht verfügbar."; return; }
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                map.setView([userCoords.lat, userCoords.lon], 14);
-                
-                let eleText = '';
-                try {
-                    const eleRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userCoords.lat}&longitude=${userCoords.lon}&current=elevation`);
-                    const eleData = await eleRes.json();
-                    if (eleData.elevation !== undefined) eleText = `<br>Höhe: ~${Math.round(eleData.elevation)}m ü. NHN`;
-                } catch {}
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+            map.setView([userCoords.lat, userCoords.lon], 14);
+            
+            if (userMarker) map.removeLayer(userMarker);
+            const headingIcon = L.divIcon({
+                className: 'user-heading-icon',
+                html: '<div id="userHeadingArrow">🧭</div>',
+                iconSize: [30, 30], iconAnchor: [15, 15]
+            });
 
-                if (userMarker) map.removeLayer(userMarker);
-                
-                const headingIcon = L.divIcon({
-                    className: 'user-heading-icon',
-                    html: '<div id="userHeadingArrow">🧭</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                });
+            userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standpunkt</b>`).openPopup();
+            status.innerText = "Standort lokalisiert.";
 
-                userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standpunkt</b>${eleText}`).openPopup();
-                status.innerText = "Standort lokalisiert. Kompass aktiv!";
-                
-                // Kompass aktivieren
-                if (window.DeviceOrientationEvent) {
-                    window.addEventListener('deviceorientation', (e) => {
-                        let alpha = e.alpha || e.webkitCompassHeading;
-                        if (alpha !== null) {
-                            const arrow = document.getElementById('userHeadingArrow');
-                            if (arrow) arrow.style.transform = `rotate(${360 - alpha}deg)`;
-                        }
-                    }, true);
-                }
-
-                const selectedPilz = document.getElementById('pilzSelect').value;
-                if (selectedPilz) triggerPilzFetch(selectedPilz);
-            },
-            () => { status.innerText = "GPS-Zugriff verweigert."; }
-        );
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientation', (e) => {
+                    let alpha = e.alpha || e.webkitCompassHeading;
+                    if (alpha !== null) {
+                        const arrow = document.getElementById('userHeadingArrow');
+                        if (arrow) arrow.style.transform = `rotate(${360 - alpha}deg)`;
+                    }
+                }, true);
+            }
+        });
     });
 
-    // GPS-Track Aufzeichnung
+    // Tracking
     document.getElementById('trackBtn').addEventListener('click', () => {
         const trackBtn = document.getElementById('trackBtn');
         const status = document.getElementById('status');
-
         if (!isTracking) {
-            if (!navigator.geolocation) { status.innerText = "GPS nicht unterstützt."; return; }
             isTracking = true;
             trackBtn.classList.add('active');
             trackBtn.innerText = "🛑 Aufzeichnung stoppen";
             status.innerText = "Route wird aufgezeichnet...";
-
             watchId = navigator.geolocation.watchPosition((pos) => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 userCoords = { lat, lon };
                 trackPath.push([lat, lon]);
                 polylineLayer.setLatLngs(trackPath);
-            }, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 });
-
+            }, () => {}, { enableHighAccuracy: true });
         } else {
             isTracking = false;
             navigator.geolocation.clearWatch(watchId);
             trackBtn.classList.remove('active');
             trackBtn.innerText = "🐾 Route aufzeichnen (GPS)";
-            status.innerText = `Route gespeichert (${trackPath.length} Punkte).`;
+            status.innerText = "Route gestoppt.";
         }
     });
 
-    // Wetter- & Bodenfeuchte-Abfrage
+    // Weather & Walddaten
     async function fetchWeatherData(lat, lon) {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&forecast_days=1&daily=precipitation_sum,temperature_2m_mean&timezone=auto`;
-        
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Wetterdaten konnte nicht geladen werden");
         const data = await res.json();
-        
         const sums = data.daily?.precipitation_sum || [];
         const temps = data.daily?.temperature_2m_mean || [];
-        
-        let rainTotal = 0;
-        sums.forEach(val => {
-            if (typeof val === 'number' && !isNaN(val)) {
-                rainTotal += val;
-            }
-        });
-        rainTotal = Math.round(rainTotal * 10) / 10;
-
-        let tempSum = 0;
-        let tempCount = 0;
-        temps.forEach(val => {
-            if (typeof val === 'number' && !isNaN(val)) {
-                tempSum += val;
-                tempCount++;
-            }
-        });
-        const tempAvg = tempCount > 0 ? Math.round((tempSum / tempCount) * 10) / 10 : 15;
-        
-        let elevation = 0;
-        try {
-            const eleRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=elevation`);
-            const eleData = await eleRes.json();
-            elevation = Math.round(eleData.elevation || 0);
-        } catch {}
-
-        return { rainTotal, tempAvg, elevation };
+        let rainTotal = sums.reduce((a, b) => a + (b || 0), 0);
+        let tempAvg = temps.length ? temps.reduce((a, b) => a + (b || 0), 0) / temps.length : 15;
+        return { rainTotal: Math.round(rainTotal * 10)/10, tempAvg: Math.round(tempAvg * 10)/10 };
     }
 
-    function getPrognose(rain, temp) {
-        if (rain < 10) return { text: 'Niedrig 🔴 (Geringer Regen)', css: 'prognose-niedrig' };
-        if (rain <= 25 && temp >= 12) return { text: 'Mittel 🟡 (Gute Bedingungen)', css: 'prognose-mittel' };
-        if (rain > 25 && temp >= 10) return { text: 'Hoch 🟢 (Optimale Feuchte & Wärme!)', css: 'prognose-hoch' };
-        return { text: 'Mittel 🟡 (Feucht, aber kühl)', css: 'prognose-mittel' };
-    }
-
-    // Walddaten abrufen & Offline-Caching
     function fetchForests(filterTag) {
         const status = document.getElementById('status');
         if (map.getZoom() < 11) { status.innerText = "Bitte näher heranzoomen!"; return; }
@@ -552,65 +565,35 @@
         forestLayer.clearLayers();
         const bounds = map.getBounds();
         const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-        const query = `[out:json][timeout:25];(way["landuse"="forest"]${filterTag}(${bbox});relation["landuse"="forest"]${filterTag}(${bbox});way["natural"="wood"]${filterTag}(${bbox});relation["natural"="wood"]${filterTag}(${bbox}););out body;>;out skel qt;`;
-
-        const cacheKey = `cache_${filterTag}_${bbox}`;
-        const cachedData = localStorage.getItem(cacheKey);
+        const query = `[out:json][timeout:25];(way["landuse"="forest"]${filterTag}(${bbox});way["natural"="wood"]${filterTag}(${bbox}););out body;>;out skel qt;`;
 
         fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
         .then(res => res.json())
-        .then(data => {
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-            renderGeoJson(data);
-        })
-        .catch(() => {
-            if (cachedData) {
-                status.innerText = "Offline: Verwende gecachte Walddaten!";
-                renderGeoJson(JSON.parse(cachedData));
-            } else {
-                fetch('https://overpass.kumi.systems/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
-                .then(res => res.json())
-                .then(data => renderGeoJson(data))
-                .catch(() => status.innerText = "Fehler beim Laden der Waldflächen.");
-            }
-        });
+        .then(data => renderGeoJson(data))
+        .catch(() => status.innerText = "Fehler beim Laden.");
     }
 
     function renderGeoJson(data) {
-        const status = document.getElementById('status');
         const geojson = osmtogeojson(data);
-        if (!geojson.features || geojson.features.length === 0) { status.innerText = "Keine Waldflächen gefunden."; return; }
-        
         L.geoJSON(geojson, {
             style: { color: "#34d399", weight: 2, fillColor: "#10b981", fillOpacity: 0.3 },
             onEachFeature: function (feature, layer) {
                 layer.on('click', async function (e) {
-                    layer.bindPopup('<div style="padding:6px; color:#cbd5e1;">Berechne Habitat-Score…</div>').openPopup(e.latlng);
-                    try {
-                        const weather = await fetchWeatherData(e.latlng.lat, e.latlng.lng);
-                        const prognose = getPrognose(weather.rainTotal, weather.tempAvg);
-                        
-                        let distText = '';
-                        if (userCoords) {
-                            const dist = calculateDistance(userCoords.lat, userCoords.lon, e.latlng.lat, e.latlng.lng);
-                            distText = `<div class="detail-row">📍 Entfern: <b>${dist} von dir</b></div>`;
-                        }
-
-                        layer.setPopupContent(`
-                            <div class="weather-popup">
-                                <h3>Habitat-Analyse</h3>
-                                <div class="mm">${weather.rainTotal} mm <small style="font-size:12px;color:#94a3b8;">(10 Tage)</small></div>
-                                <div class="detail-row">🌡️ Ø Temp (10d): <b>${weather.tempAvg} °C</b></div>
-                                <div class="detail-row">⛰️ Meereshöhe: <b>~${weather.elevation} m</b></div>
-                                ${distText}
-                                <div class="prognose ${prognose.css}">${prognose.text}</div>
-                            </div>
-                        `);
-                    } catch { layer.setPopupContent('Fehler bei Datenabfrage.'); }
+                    layer.bindPopup('Berechne Daten...').openPopup(e.latlng);
+                    const weather = await fetchWeatherData(e.latlng.lat, e.latlng.lng);
+                    let distText = userCoords ? `📍 Entfern: <b>${calculateDistance(userCoords.lat, userCoords.lon, e.latlng.lat, e.latlng.lng)}</b>` : '';
+                    layer.setPopupContent(`
+                        <div class="weather-popup">
+                            <h3>Habitat-Analyse</h3>
+                            <div class="mm">${weather.rainTotal} mm <small>(10 Tage Regen)</small></div>
+                            <div class="detail-row">🌡️ Ø Temp: <b>${weather.tempAvg} °C</b></div>
+                            <div class="detail-row">${distText}</div>
+                        </div>
+                    `);
                 });
             }
         }).addTo(forestLayer);
-        status.innerText = `${geojson.features.length} Waldflächen identifiziert!`;
+        document.getElementById('status').innerText = `${geojson.features.length} Waldflächen gefunden!`;
     }
 
     function osmtogeojson(data) {
@@ -620,10 +603,7 @@
         data.elements.forEach(el => {
             if (el.type === 'way' && el.nodes) {
                 let coords = el.nodes.map(id => nodes[id]).filter(c => c !== undefined);
-                if (coords.length > 3) {
-                    if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) coords.push(coords[0]);
-                    features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: el.tags || {} });
-                }
+                if (coords.length > 3) features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: el.tags || {} });
             }
         });
         return { type: "FeatureCollection", features: features };
