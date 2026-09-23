@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pilz-Habitat-Finder</title>
     
+    <!-- PWA Settings (Damit "Installieren" in Chrome klappt) -->
+    <meta name="theme-color" content="#10b981">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628324.png">
+    
+    <!-- Inlined Web Manifest -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Pilz-Habitat-Finder","short_name":"Pilz Habitat","start_url":"./","display":"standalone","background_color":"#121212","theme_color":"#10b981","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/628/628324.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -121,16 +131,6 @@
         }
         .btn-primary:active {
             background: #059669;
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            background: #ffffff;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-        }
-        .btn-secondary:active {
-            background: #f8fafc;
             transform: scale(0.98);
         }
 
@@ -290,13 +290,16 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Offline-Cache-Registration
+    // Service Worker für PWA-Installation und Offline-Funktionalität
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('data:text/javascript;charset=utf-8,' + encodeURIComponent(`
-                self.addEventListener('install', e => e.waitUntil(caches.open('pilz-v2').then(c => c.addAll(['/']))));
-                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
-            `)).catch(()=>{});
+            const swCode = `
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => self.clients.claim());
+                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
         });
     }
 
