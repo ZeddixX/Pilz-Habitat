@@ -8,1619 +8,1175 @@
 <title>🍄 PilzMap</title>
 
 <link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-
 :root{
- --bg:#071512;
- --panel:rgba(7,21,18,.95);
- --panel2:#10241e;
- --line:#29443a;
- --text:#f3f8f5;
- --muted:#9eafa8;
- --green:#16e0a4;
- --green2:#6cf0c6;
- --blue:#31a9ff;
- --purple:#a66cff;
- --orange:#ff9b32;
- --red:#ff5661;
+--bg:#071512;
+--panel:rgba(7,21,18,.94);
+--panel2:#10241e;
+--line:#213a32;
+--text:#f3f8f5;
+--muted:#9eafa8;
+--green:#16e0a4;
+--green2:#6cf0c6;
+--blue:#31a9ff;
+--purple:#a66cff;
+--orange:#ff9b32;
+--red:#ff5661;
 }
 
 *{
- box-sizing:border-box;
+box-sizing:border-box;
 }
 
-html,
-body{
- margin:0;
- width:100%;
- height:100%;
- overflow:hidden;
- background:var(--bg);
- color:var(--text);
- font-family:
-   system-ui,
-   -apple-system,
-   BlinkMacSystemFont,
-   "Segoe UI",
-   Roboto,
-   sans-serif;
+html,body{
+margin:0;
+width:100%;
+height:100%;
+overflow:hidden;
+background:var(--bg);
+color:var(--text);
+font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
 }
 
-button,
-input{
- font:inherit;
+button,input{
+font:inherit;
 }
 
 button{
- border:0;
- color:var(--text);
- cursor:pointer;
+border:0;
+color:var(--text);
+cursor:pointer;
 }
 
 #map{
- position:absolute;
- inset:0;
- z-index:1;
-}
-
-.leaflet-control-zoom{
- display:none;
+position:absolute;
+inset:0;
+z-index:1;
 }
 
 .leaflet-control-attribution{
- font-size:9px;
+font-size:9px;
 }
 
-/* =========================================================
-   TOPBAR
-========================================================= */
+.leaflet-control-zoom{
+display:none;
+}
+
+/* =========================
+TOP BAR
+========================= */
 
 .topbar{
- position:absolute;
- z-index:1000;
+position:absolute;
+top:max(14px,env(safe-area-inset-top));
+left:14px;
+right:14px;
+height:76px;
+z-index:1000;
 
- top:max(12px,env(safe-area-inset-top));
- left:14px;
- right:14px;
+border:1px solid rgba(255,255,255,.08);
+border-radius:25px;
 
- height:68px;
+background:rgba(5,18,15,.90);
+backdrop-filter:blur(18px);
 
- display:flex;
- align-items:center;
+display:flex;
+align-items:center;
 
- padding:9px 10px 9px 15px;
+padding:10px 12px 10px 18px;
 
- border:1px solid rgba(255,255,255,.08);
- border-radius:22px;
-
- background:rgba(5,18,15,.91);
- backdrop-filter:blur(18px);
-
- box-shadow:0 10px 35px #0008;
+box-shadow:0 10px 35px #0008;
 }
 
 .logo{
- font-size:29px;
- margin-right:8px;
+font-size:31px;
+line-height:1;
+margin-right:10px;
 }
 
 .brand{
- font-size:26px;
- font-weight:850;
- letter-spacing:-1px;
- color:var(--green);
+font-size:29px;
+font-weight:850;
+letter-spacing:-1px;
+color:var(--green);
 }
 
 .version{
- margin-left:7px;
- padding:4px 7px;
-
- border-radius:999px;
-
- font-size:10px;
-
- background:#172b25;
- border:1px solid #29463b;
-
- color:#b8c9c2;
+font-size:11px;
+background:#172b25;
+border:1px solid #29463b;
+padding:5px 8px;
+border-radius:999px;
+margin-left:8px;
+color:#b8c9c2;
 }
 
 .top-actions{
- margin-left:auto;
-
- display:flex;
- gap:7px;
+margin-left:auto;
+display:flex;
+gap:8px;
 }
 
 .icon-btn{
- width:48px;
- height:48px;
+width:52px;
+height:52px;
+border-radius:16px;
 
- border-radius:15px;
+background:#13251f;
+border:1px solid #294138;
 
- background:#13251f;
- border:1px solid #294138;
+display:grid;
+place-items:center;
 
- display:grid;
- place-items:center;
-
- font-size:23px;
+font-size:25px;
 }
 
 .icon-btn:active{
- transform:scale(.96);
+transform:scale(.96);
 }
 
 #menuBtn.active{
- color:var(--green);
- border-color:var(--green);
- background:#18382e;
+background:#18382e;
+border-color:var(--green);
+color:var(--green2);
 }
 
-/* =========================================================
-   SUCHLEISTE
-========================================================= */
+/* =========================
+SEARCH
+========================= */
 
 .search{
- position:absolute;
- z-index:1000;
+position:absolute;
+z-index:1000;
 
- top:91px;
- left:34px;
- right:34px;
+top:105px;
+left:24px;
+right:24px;
 
- height:43px;
+height:54px;
 
- display:flex;
- align-items:center;
+background:rgba(5,18,15,.90);
+border:1px solid #1f3a31;
+border-radius:20px;
 
- padding:0 12px;
+display:flex;
+align-items:center;
 
- background:rgba(5,18,15,.88);
+padding:0 16px;
 
- border:1px solid #203b32;
- border-radius:15px;
+backdrop-filter:blur(14px);
 
- backdrop-filter:blur(14px);
-
- box-shadow:0 6px 20px #0006;
+box-shadow:0 8px 25px #0006;
 }
 
 .search span{
- margin-right:7px;
-
- color:#aebdb7;
-
- font-size:18px;
+font-size:23px;
+color:#b9c8c2;
+margin-right:10px;
 }
 
 .search input{
- width:100%;
-
- border:0;
- outline:0;
-
- background:transparent;
-
- color:white;
-
- font-size:14px;
+width:100%;
+border:0;
+outline:0;
+background:transparent;
+color:#fff;
+font-size:16px;
 }
 
 .search input::placeholder{
- color:#899b94;
+color:#9aaca5;
 }
 
-/* =========================================================
-   MENÜ
-========================================================= */
+/* =========================
+SIDE MENU
+========================= */
 
 .side-menu{
- position:absolute;
- z-index:1500;
+position:absolute;
+z-index:1100;
 
- top:84px;
- right:14px;
+top:92px;
+right:16px;
 
- width:270px;
+width:270px;
 
- padding:11px;
+background:rgba(6,19,16,.97);
+border:1px solid #29443a;
+border-radius:22px;
 
- border:1px solid #29443a;
- border-radius:22px;
+padding:12px;
 
- background:rgba(6,19,16,.98);
+box-shadow:0 18px 50px #000b;
 
- box-shadow:0 18px 50px #000b;
+transform:translateY(-12px) scale(.96);
+opacity:0;
+pointer-events:none;
 
- opacity:0;
- pointer-events:none;
-
- transform:translateY(-10px) scale(.97);
-
- transition:.18s ease;
+transition:.18s ease;
 }
 
 .side-menu.open{
- opacity:1;
- pointer-events:auto;
-
- transform:none;
+opacity:1;
+pointer-events:auto;
+transform:none;
 }
 
 .menu-title{
- padding:8px;
-
- color:var(--muted);
-
- font-size:11px;
- text-transform:uppercase;
- letter-spacing:1px;
+padding:8px 8px 10px;
+color:var(--muted);
+font-size:12px;
+text-transform:uppercase;
+letter-spacing:1px;
 }
 
 .menu-row{
- display:flex;
- align-items:center;
- gap:11px;
+display:flex;
+align-items:center;
+gap:12px;
 
- padding:11px;
+padding:12px;
+border-radius:15px;
 
- margin:3px 0;
+margin:3px 0;
 
- border-radius:14px;
-
- background:#0d211b;
-
- border:1px solid transparent;
+background:#0d211b;
+border:1px solid transparent;
 }
 
 .menu-row:active{
- background:#163128;
+background:#163128;
 }
 
 .menu-icon{
- width:29px;
-
- text-align:center;
-
- font-size:21px;
+font-size:23px;
+width:30px;
+text-align:center;
 }
 
 .menu-label{
- flex:1;
-
- font-weight:650;
-
- font-size:14px;
+flex:1;
+font-weight:650;
 }
 
 .toggle{
- width:40px;
- height:23px;
-
- padding:2px;
-
- border-radius:20px;
-
- background:#34443e;
+width:42px;
+height:24px;
+border-radius:20px;
+background:#34443e;
+padding:3px;
+transition:.15s;
 }
 
 .toggle i{
- display:block;
-
- width:19px;
- height:19px;
-
- border-radius:50%;
-
- background:#c4cec9;
-
- transition:.15s;
+display:block;
+width:18px;
+height:18px;
+border-radius:50%;
+background:#c4cec9;
+transition:.15s;
 }
 
 .toggle.on{
- background:var(--green);
+background:var(--green);
 }
 
 .toggle.on i{
- transform:translateX(17px);
-
- background:#062017;
+transform:translateX(18px);
+background:#062017;
 }
 
-/* =========================================================
-   MAP CONTROLS
-========================================================= */
+/* =========================
+MAP CONTROLS
+========================= */
 
 .map-controls{
- position:absolute;
- z-index:900;
+position:absolute;
+z-index:900;
 
- top:150px;
- right:14px;
+right:16px;
+top:175px;
 
- display:flex;
- flex-direction:column;
- gap:7px;
+display:flex;
+flex-direction:column;
+gap:8px;
 }
 
 .map-btn{
- width:45px;
- height:45px;
+width:48px;
+height:48px;
 
- display:grid;
- place-items:center;
+border-radius:15px;
 
- border-radius:14px;
+background:rgba(5,18,15,.93);
+border:1px solid #294138;
 
- background:rgba(5,18,15,.93);
+display:grid;
+place-items:center;
 
- border:1px solid #294138;
+font-size:21px;
 
- font-size:20px;
-
- box-shadow:0 7px 18px #0007;
+box-shadow:0 7px 18px #0007;
 }
 
-/* =========================================================
-   PILZ MARKER
-========================================================= */
+/* =========================
+MUSHROOM MARKERS
+========================= */
 
 .mush-marker{
- width:43px;
- height:43px;
+width:44px;
+height:44px;
 
- display:grid;
- place-items:center;
+border-radius:50%;
 
- border-radius:50%;
+display:grid;
+place-items:center;
 
- background:rgba(4,18,14,.88);
+background:rgba(4,18,14,.86);
 
- border:1px solid #9cf5d4;
+border:1px solid #9cf5d4;
 
- box-shadow:0 6px 20px #0009;
+box-shadow:0 6px 20px #0009;
 
- font-size:26px;
+font-size:27px;
 }
 
 .mush-popup{
- color:#15211c;
-
- min-width:155px;
+color:#15211c;
+min-width:150px;
 }
 
 .mush-popup b{
- font-size:16px;
+font-size:16px;
 }
 
-/* =========================================================
-   HABITAT MARKER
-========================================================= */
-
-.habitat-marker{
- width:40px;
- height:40px;
-
- display:grid;
- place-items:center;
-
- border-radius:50%;
-
- background:rgba(8,31,23,.9);
-
- border:2px solid #36e5ae;
-
- box-shadow:0 4px 15px #0008;
-
- font-size:22px;
-}
-
-/* =========================================================
-   BOTTOM SHEET
-========================================================= */
+/* =========================
+BOTTOM SHEET
+========================= */
 
 .sheet{
- position:absolute;
- z-index:1000;
+position:absolute;
+z-index:1000;
 
- left:0;
- right:0;
- bottom:0;
+left:0;
+right:0;
+bottom:0;
 
- height:204px;
+background:rgba(5,19,16,.96);
+backdrop-filter:blur(20px);
 
- padding:
-   11px
-   14px
-   calc(78px + env(safe-area-inset-bottom));
+border:1px solid #244137;
+border-bottom:0;
 
- border:1px solid #244137;
- border-bottom:0;
+border-radius:30px 30px 0 0;
 
- border-radius:29px 29px 0 0;
+box-shadow:0 -15px 45px #0009;
 
- background:rgba(5,19,16,.96);
+height:205px;
 
- backdrop-filter:blur(20px);
+padding:
+12px
+14px
+calc(80px + env(safe-area-inset-bottom));
 
- box-shadow:0 -15px 45px #0009;
-
- transition:height .25s ease;
+transition:height .25s ease;
 }
 
 .sheet.expanded{
- height:min(76vh,700px);
+height:min(74vh,680px);
 }
 
 .handle{
- width:53px;
- height:5px;
+width:55px;
+height:6px;
 
- margin:0 auto 8px;
+background:#61716b;
+border-radius:99px;
 
- border-radius:99px;
-
- background:#61716b;
+margin:0 auto 8px;
 }
 
 .sheet-head{
- display:flex;
- align-items:center;
- gap:9px;
+display:flex;
+align-items:center;
+gap:10px;
 }
 
 .sheet-icon{
- width:46px;
- height:46px;
+width:48px;
+height:48px;
 
- display:grid;
- place-items:center;
+border-radius:16px;
 
- border-radius:15px;
+background:#0d211b;
 
- background:#0d211b;
+display:grid;
+place-items:center;
 
- font-size:26px;
+font-size:27px;
 }
 
 .sheet-title{
- font-size:20px;
- font-weight:850;
+font-size:21px;
+font-weight:850;
 }
 
 .online{
- display:inline-block;
+font-size:12px;
+color:var(--green);
 
- margin-left:4px;
+background:#073b2b;
 
- padding:5px 8px;
+padding:6px 9px;
 
- border-radius:999px;
-
- color:var(--green);
-
- background:#073b2b;
-
- font-size:10px;
+border-radius:999px;
+margin-left:5px;
 }
 
 .up{
- margin-left:auto;
+margin-left:auto;
 
- width:45px;
- height:45px;
+width:48px;
+height:48px;
 
- border-radius:14px;
+border-radius:15px;
 
- background:#112820;
+background:#112820;
+border:1px solid #29483c;
 
- border:1px solid #29483c;
-
- font-size:21px;
-}
-
-#gpsText{
- margin-top:2px;
- color:#93a59d;
- font-size:12px;
+font-size:23px;
 }
 
 .stats{
- display:grid;
- grid-template-columns:repeat(3,1fr);
+display:grid;
+grid-template-columns:repeat(3,1fr);
 
- gap:7px;
+gap:8px;
 
- margin-top:9px;
+margin-top:10px;
 }
 
 .stat{
- padding:8px;
+background:#0c211b;
+border:1px solid #1d3930;
 
- border-radius:15px;
+border-radius:16px;
 
- background:#0c211b;
-
- border:1px solid #1d3930;
+padding:9px 8px;
 }
 
 .stat .big{
- font-size:17px;
- font-weight:800;
+font-size:18px;
+font-weight:800;
 }
 
 .stat .small{
- color:var(--muted);
- font-size:10px;
+font-size:11px;
+color:var(--muted);
 }
 
 .quick-title{
- margin:10px 2px 6px;
+font-size:13px;
+color:#b5c3bd;
 
- color:#b5c3bd;
-
- font-size:12px;
+margin:12px 2px 7px;
 }
 
 .quick{
- display:grid;
- grid-template-columns:repeat(4,1fr);
-
- gap:6px;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:7px;
 }
 
 .quick button{
- padding:9px 4px;
+border-radius:14px;
 
- border-radius:13px;
+padding:10px 5px;
 
- background:#102820;
+background:#102820;
 
- border:1px solid #26453a;
+border:1px solid #26453a;
 
- font-size:11px;
+font-size:12px;
 }
 
 .quick button:nth-child(1){
- border-color:#0bdca1;
+border-color:#0bdca1;
 }
 
 .quick button:nth-child(2){
- border-color:#ff922d;
+border-color:#ff922d;
 }
 
 .quick button:nth-child(3){
- border-color:#9b63ff;
+border-color:#9b63ff;
 }
 
 .quick button:nth-child(4){
- border-color:#1fa9ff;
+border-color:#1fa9ff;
 }
 
-/* =========================================================
-   DETAILS
-========================================================= */
+/* =========================
+DETAILS
+========================= */
 
 .details{
- display:none;
+display:none;
 
- height:calc(100% - 176px);
+margin-top:12px;
 
- margin-top:11px;
+overflow:auto;
 
- overflow:auto;
+height:calc(100% - 185px);
 
- padding-bottom:10px;
+padding-bottom:10px;
 }
 
 .sheet.expanded .details{
- display:block;
+display:block;
 }
 
 .detail-card{
- padding:12px;
+background:#0d211b;
+border:1px solid #203d33;
 
- margin-bottom:8px;
+border-radius:17px;
 
- border-radius:16px;
+padding:13px;
 
- background:#0d211b;
-
- border:1px solid #203d33;
+margin-bottom:9px;
 }
 
 .detail-card h3{
- margin:0 0 5px;
-
- font-size:15px;
+margin:0 0 5px;
+font-size:16px;
 }
 
 .detail-card p{
- margin:5px 0;
+margin:5px 0;
 
- color:#bac8c2;
+color:#bac8c2;
 
- font-size:12px;
+font-size:13px;
 
- line-height:1.4;
+line-height:1.4;
 }
 
 .species-grid{
- display:grid;
- grid-template-columns:repeat(2,1fr);
-
- gap:7px;
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:8px;
 }
 
 .species-card{
- padding:11px;
+padding:12px;
 
- border-radius:14px;
+border-radius:15px;
 
- background:#132a22;
+background:#132a22;
 
- border:1px solid #28483c;
-
- text-align:left;
+border:1px solid #28483c;
 }
 
 .species-card b{
- display:block;
-
- margin-top:3px;
-
- font-size:12px;
+display:block;
 }
 
 .species-card small{
- color:var(--muted);
-
- font-size:10px;
+color:var(--muted);
 }
 
 .danger{
- color:#ff9b9f!important;
+color:#ff9b9f!important;
 }
 
-/* =========================================================
-   BOTTOM NAV
-========================================================= */
+/* =========================
+BOTTOM NAV
+========================= */
 
 .bottom-nav{
- position:absolute;
- z-index:1200;
+position:absolute;
+z-index:1200;
 
- left:0;
- right:0;
- bottom:0;
+left:0;
+right:0;
+bottom:0;
 
- height:68px;
+height:70px;
 
- display:grid;
- grid-template-columns:repeat(5,1fr);
+background:rgba(5,18,15,.98);
 
- background:rgba(5,18,15,.98);
+border-top:1px solid #1e3930;
 
- border-top:1px solid #1e3930;
+display:grid;
+grid-template-columns:repeat(5,1fr);
 
- padding-bottom:env(safe-area-inset-bottom);
+padding-bottom:env(safe-area-inset-bottom);
 }
 
 .bottom-nav button{
- display:flex;
- flex-direction:column;
- align-items:center;
- justify-content:center;
+background:none;
 
- gap:2px;
+color:#84958e;
 
- background:none;
+font-size:11px;
 
- color:#84958e;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
 
- font-size:10px;
+gap:3px;
 }
 
 .bottom-nav button span:first-child{
- font-size:21px;
+font-size:22px;
 }
 
 .bottom-nav button.active{
- color:var(--green);
+color:var(--green);
 }
 
-/* =========================================================
-   MODAL
-========================================================= */
+/* =========================
+MODAL
+========================= */
 
 .modal{
- position:fixed;
- z-index:3000;
+position:fixed;
+inset:0;
 
- inset:0;
+z-index:3000;
 
- display:none;
- align-items:flex-end;
+background:#000a;
 
- background:#000a;
+display:none;
+
+align-items:flex-end;
 }
 
 .modal.open{
- display:flex;
+display:flex;
 }
 
 .modal-box{
- width:100%;
- max-height:84vh;
+width:100%;
+max-height:84vh;
 
- padding:17px;
+background:#0a1c17;
 
- overflow:auto;
+border:1px solid #2a473c;
 
- border:1px solid #2a473c;
- border-radius:25px 25px 0 0;
+border-radius:25px 25px 0 0;
 
- background:#0a1c17;
+padding:18px;
+
+overflow:auto;
 }
 
 .modal-head{
- display:flex;
- align-items:center;
- justify-content:space-between;
+display:flex;
+align-items:center;
+justify-content:space-between;
 }
 
 .modal-head h2{
- margin:0;
-
- font-size:20px;
+margin:0;
 }
 
 .close{
- width:41px;
- height:41px;
+width:42px;
+height:42px;
 
- border-radius:13px;
+border-radius:13px;
 
- background:#152b23;
-
- font-size:22px;
+background:#152b23;
 }
 
 .field{
- width:100%;
+width:100%;
 
- margin:7px 0;
+background:#071510;
 
- padding:11px;
+border:1px solid #29443a;
 
- border:1px solid #29443a;
- border-radius:13px;
+border-radius:13px;
 
- outline:none;
+color:#fff;
 
- color:#fff;
- background:#071510;
+padding:11px;
+
+margin:7px 0;
+
+outline:none;
 }
 
 .primary{
- width:100%;
+width:100%;
 
- margin-top:7px;
- padding:12px;
+padding:12px;
 
- border-radius:14px;
+border-radius:14px;
 
- background:var(--green);
+background:var(--green);
 
- color:#042016;
+color:#042016;
 
- font-weight:800;
+font-weight:800;
+
+margin-top:7px;
 }
 
-/* =========================================================
-   MAP INFO
-========================================================= */
+/* LIVE WALD */
+.habitat-polygon{
+fill:#17d99d;
+fill-opacity:.13;
 
-.map-info{
- color:#16211d;
+stroke:#22e3ad;
+stroke-width:2;
 }
 
-.map-info-main{
- display:flex;
- align-items:center;
- gap:12px;
+.live-nature{
+fill:#6cf0c6;
+fill-opacity:.08;
 
- padding:12px;
-
- border-radius:15px;
-
- background:#edf7f2;
+stroke:#6cf0c6;
+stroke-width:1.5;
 }
 
-.big-habitat-icon{
- width:48px;
- height:48px;
-
- flex-shrink:0;
-
- display:grid;
- place-items:center;
-
- border-radius:14px;
-
- background:#d8eee4;
-
- font-size:27px;
+.selection-circle{
+fill:#31a9ff;
+fill-opacity:.06;
+stroke:#31a9ff;
+stroke-width:2;
+stroke-dasharray:8 8;
 }
 
-.map-info-main b{
- display:block;
-
- font-size:15px;
+.tree-marker{
+width:20px;
+height:20px;
+border-radius:50%;
+display:grid;
+place-items:center;
+font-size:13px;
+background:#09251b;
+border:1px solid #6cf0c6;
+box-shadow:0 3px 10px #0008;
 }
 
-.map-info-main small{
- display:block;
-
- margin-top:3px;
-
- color:#66756f;
-
- font-size:10px;
-}
-
-.map-info-section{
- margin-top:12px;
-}
-
-.map-info-section h3{
- margin:0 0 5px;
-
- font-size:14px;
-}
-
-.map-info-section p{
- margin:0 0 8px;
-
- color:#53615c;
-
- font-size:11px;
-
- line-height:1.4;
-}
-
-.possible-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
-
- gap:6px;
-}
-
-.possible-mushroom{
- padding:9px 6px;
-
- border-radius:11px;
-
- background:#e7f3ed;
-
- color:#17372b;
-
- border:1px solid #c4dfd2;
-
- font-size:11px;
-}
-
-.nearby-mushroom{
- display:flex;
- align-items:center;
- gap:9px;
-
- padding:8px;
-
- margin:5px 0;
-
- border-radius:11px;
-
- background:#edf7f2;
-}
-
-.nearby-mushroom > span{
- font-size:20px;
-}
-
-.nearby-mushroom b{
- display:block;
-
- font-size:11px;
-}
-
-.nearby-mushroom small{
- color:#687771;
-
- font-size:10px;
-}
-
-.no-results{
- padding:9px;
-
- border-radius:11px;
-
- background:#edf7f2;
-
- color:#66756f;
-
- font-size:11px;
-}
-
-.map-warning{
- margin-top:12px!important;
-
- padding:9px;
-
- border-radius:10px;
-
- background:#fff1df;
-
- color:#79521f!important;
-
- font-size:10px!important;
-}
-
-/* =========================================================
-   HABITAT INFO BADGES
-========================================================= */
-
-.habitat-badges{
- display:flex;
- flex-wrap:wrap;
- gap:5px;
-}
-
-.habitat-badge{
- padding:6px 8px;
-
- border-radius:999px;
-
- background:#e7f3ed;
-
- color:#1b4939;
-
- border:1px solid #c5dfd2;
-
- font-size:10px;
-}
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
+/* Desktop */
 @media(min-width:800px){
 
- .topbar{
-  left:28px;
-  right:28px;
- }
-
- .search{
-  left:38px;
-  right:auto;
-  width:570px;
- }
-
- .sheet{
-  left:20px;
-  right:20px;
-
-  border-radius:30px;
- }
-
- .bottom-nav{
-  left:20px;
-  right:20px;
-
-  border-radius:20px 20px 0 0;
- }
-
+.topbar{
+left:28px;
+right:28px;
 }
 
+.search{
+left:38px;
+right:auto;
+width:570px;
+}
+
+.sheet{
+left:20px;
+right:20px;
+
+width:auto;
+
+border-radius:30px;
+
+height:210px;
+}
+
+.bottom-nav{
+left:20px;
+right:20px;
+
+border-radius:20px 20px 0 0;
+}
+}
 </style>
 </head>
 
 <body>
 
-<!-- =======================================================
-     KARTE
-======================================================= -->
-
 <div id="map"></div>
-
-
-<!-- =======================================================
-     TOPBAR
-======================================================= -->
 
 <header class="topbar">
 
- <div class="logo">
-  🍄
- </div>
+<div class="logo">🍄</div>
 
- <div class="brand">
-  PilzMap
- </div>
+<div class="brand">PilzMap</div>
 
- <span class="version">
-  v3.1
- </span>
+<span class="version">v3.0</span>
 
- <div class="top-actions">
+<div class="top-actions">
 
-  <button
-   class="icon-btn"
-   id="gpsTop">
-   ◎
-  </button>
+<button class="icon-btn" id="gpsTop" title="GPS">◎</button>
 
-  <button
-   class="icon-btn"
-   id="menuBtn">
-   ☰
-  </button>
+<button class="icon-btn" id="menuBtn" title="Menü">☰</button>
 
- </div>
+</div>
 
 </header>
 
-
-<!-- =======================================================
-     SUCHE
-======================================================= -->
-
 <div class="search">
 
- <span>⌕</span>
+<span>⌕</span>
 
- <input
-  id="searchInput"
-  placeholder="Ort, Wald oder Pilz suchen…">
+<input
+id="searchInput"
+placeholder="Ort, Wald oder Pilz suchen…">
 
 </div>
 
+<aside class="side-menu" id="sideMenu">
 
-<!-- =======================================================
-     MENÜ
-======================================================= -->
+<div class="menu-title">Kartenansicht</div>
 
-<aside
- class="side-menu"
- id="sideMenu">
+<div class="menu-row" id="mapLayerBtn">
 
- <div class="menu-title">
-  Kartenansicht
- </div>
+<span class="menu-icon">🗺️</span>
 
- <div
-  class="menu-row"
-  id="mapLayerBtn">
+<span class="menu-label">Karte</span>
 
-  <span class="menu-icon">
-   🗺️
-  </span>
+</div>
 
-  <span class="menu-label">
-   Karte
-  </span>
+<div class="menu-row" id="satLayerBtn">
 
- </div>
+<span class="menu-icon">🛰️</span>
 
- <div
-  class="menu-row"
-  id="satLayerBtn">
+<span class="menu-label">Satellit</span>
 
-  <span class="menu-icon">
-   🛰️
-  </span>
+<span class="toggle on" id="satToggle">
+<i></i>
+</span>
 
-  <span class="menu-label">
-   Satellit
-  </span>
+</div>
 
-  <span
-   class="toggle on"
-   id="satToggle">
+<div class="menu-row" id="forestRow">
 
-   <i></i>
+<span class="menu-icon">🌲</span>
 
-  </span>
+<span class="menu-label">Waldflächen</span>
 
- </div>
+<span class="toggle on" id="forestToggle">
+<i></i>
+</span>
 
- <div
-  class="menu-row"
-  id="forestRow">
+</div>
 
-  <span class="menu-icon">
-   🌲
-  </span>
+<div class="menu-row" id="mushRow">
 
-  <span class="menu-label">
-   Waldflächen
-  </span>
+<span class="menu-icon">🍄</span>
 
-  <span
-   class="toggle on"
-   id="forestToggle">
+<span class="menu-label">Pilzspots</span>
 
-   <i></i>
+<span class="toggle on" id="mushToggle">
+<i></i>
+</span>
 
-  </span>
+</div>
 
- </div>
+<div class="menu-row" id="communityRow">
 
- <div
-  class="menu-row"
-  id="mushRow">
+<span class="menu-icon">👥</span>
 
-  <span class="menu-icon">
-   🍄
-  </span>
+<span class="menu-label">Community</span>
 
-  <span class="menu-label">
-   Pilzspots
-  </span>
+<span class="toggle" id="communityToggle">
+<i></i>
+</span>
 
-  <span
-   class="toggle on"
-   id="mushToggle">
-
-   <i></i>
-
-  </span>
-
- </div>
-
- <div
-  class="menu-row"
-  id="communityRow">
-
-  <span class="menu-icon">
-   👥
-  </span>
-
-  <span class="menu-label">
-   Community
-  </span>
-
-  <span
-   class="toggle"
-   id="communityToggle">
-
-   <i></i>
-
-  </span>
-
- </div>
+</div>
 
 </aside>
 
-
-<!-- =======================================================
-     MAP CONTROLS
-======================================================= -->
-
 <div class="map-controls">
 
- <button
-  class="map-btn"
-  id="zoomIn">
-  +
- </button>
+<button class="map-btn" id="zoomIn">+</button>
 
- <button
-  class="map-btn"
-  id="zoomOut">
-  −
- </button>
+<button class="map-btn" id="zoomOut">−</button>
 
- <button
-  class="map-btn"
-  id="locBtn">
-  ➤
- </button>
+<button class="map-btn" id="locBtn">➤</button>
 
 </div>
 
+<section class="sheet" id="sheet">
 
-<!-- =======================================================
-     BOTTOM SHEET
-======================================================= -->
+<div class="handle"></div>
 
-<section
- class="sheet"
- id="sheet">
+<div class="sheet-head">
 
- <div class="handle"></div>
+<div class="sheet-icon">🍄</div>
 
- <div class="sheet-head">
+<div>
 
-  <div class="sheet-icon">
-   🍄
-  </div>
+<div class="sheet-title">
+Pilzsuche
+<span class="online">● Online</span>
+</div>
 
-  <div>
+<div
+style="color:#93a59d;font-size:13px"
+id="gpsText">
+Live-Habitat wird geladen…
+</div>
 
-   <div class="sheet-title">
+</div>
 
-    Pilzsuche
+<button class="up" id="sheetToggle">↑</button>
 
-    <span class="online">
-     ● Online
-    </span>
+</div>
 
-   </div>
+<div class="stats">
 
-   <div id="gpsText">
-    GPS-Standort wird geladen…
-   </div>
+<div class="stat">
 
-  </div>
+<div class="big" id="spotCount">0</div>
 
-  <button
-   class="up"
-   id="sheetToggle">
+<div class="small">Waldflächen</div>
 
-   ↑
+</div>
 
-  </button>
+<div class="stat">
 
- </div>
+<div class="big" id="routeStat">0 m</div>
 
+<div class="small">Route</div>
 
- <div class="stats">
+</div>
 
-  <div class="stat">
+<div class="stat">
 
-   <div
-    class="big"
-    id="spotCount">
-    12
-   </div>
+<div class="big" id="weatherStat">–</div>
 
-   <div class="small">
-    Fundorte
-   </div>
+<div class="small">Wetter</div>
 
-  </div>
+</div>
 
+</div>
 
-  <div class="stat">
+<div class="quick-title">
+Schnellzugriff
+</div>
 
-   <div
-    class="big"
-    id="routeStat">
-    0 m
-   </div>
+<div class="quick">
 
-   <div class="small">
-    Route
-   </div>
+<button id="quickGps">◎ GPS</button>
 
-  </div>
+<button id="quickRoute">🐾 Route</button>
 
+<button id="quickSpot">☆ Spot</button>
 
-  <div class="stat">
+<button id="quickAI">📷 KI-Analyse</button>
 
-   <div
-    class="big"
-    id="weatherStat">
-    –
-   </div>
+</div>
 
-   <div class="small">
-    Wetter
-   </div>
+<div class="details" id="details">
 
-  </div>
+<div class="detail-card">
 
- </div>
+<h3>🍄 Pilzlexikon</h3>
 
+<p>
+Tippe auf eine Art, um Merkmale und typische Lebensräume zu sehen.
+</p>
 
- <div class="quick-title">
-  Schnellzugriff
- </div>
+<div class="species-grid" id="speciesGrid"></div>
 
+</div>
 
- <div class="quick">
+<div class="detail-card">
 
-  <button id="quickGps">
-   ◎ GPS
-  </button>
+<h3>🌲 Live-Habitat</h3>
 
-  <button id="quickRoute">
-   🐾 Route
-  </button>
+<p id="habitatText">
+Tippe auf die Karte oder aktiviere GPS, um die aktuellen
+OpenStreetMap-Habitatdaten in deiner Umgebung zu laden.
+</p>
 
-  <button id="quickSpot">
-   ☆ Spot
-  </button>
+<div id="liveSpecies"></div>
 
-  <button id="quickAI">
-   📷 KI
-  </button>
+<button class="primary" id="findForest">
+Waldflächen im Kartenausschnitt anzeigen
+</button>
 
- </div>
+</div>
 
-
- <div
-  class="details"
-  id="details">
-
-  <div class="detail-card">
-
-   <h3>
-    🍄 Pilzlexikon
-   </h3>
-
-   <p>
-    Tippe auf eine Art, um Merkmale und Lebensräume zu sehen.
-   </p>
-
-   <div
-    class="species-grid"
-    id="speciesGrid">
-   </div>
-
-  </div>
-
-
-  <div class="detail-card">
-
-   <h3>
-    🌲 Habitat
-   </h3>
-
-   <p>
-    Tippe direkt auf die Karte, um den Bereich zu untersuchen.
-   </p>
-
-   <button
-    class="primary"
-    id="findForest">
-
-    🌲 Waldflächen anzeigen
-
-   </button>
-
-  </div>
-
- </div>
+</div>
 
 </section>
 
-
-<!-- =======================================================
-     BOTTOM NAV
-======================================================= -->
-
 <nav class="bottom-nav">
 
- <button
-  class="active"
-  data-tab="map">
+<button class="active" data-tab="map">
+<span>🗺️</span>
+Karte
+</button>
 
-  <span>🗺️</span>
-  Karte
+<button data-tab="lexicon">
+<span>📖</span>
+Lexikon
+</button>
 
- </button>
+<button data-tab="spots">
+<span>🍄</span>
+Funde
+</button>
 
- <button
-  data-tab="lexicon">
+<button data-tab="routes">
+<span>⌁</span>
+Touren
+</button>
 
-  <span>📖</span>
-  Lexikon
-
- </button>
-
- <button
-  data-tab="spots">
-
-  <span>🍄</span>
-  Funde
-
- </button>
-
- <button
-  data-tab="routes">
-
-  <span>⌁</span>
-  Touren
-
- </button>
-
- <button
-  data-tab="profile">
-
-  <span>♙</span>
-  Profil
-
- </button>
+<button data-tab="profile">
+<span>♙</span>
+Profil
+</button>
 
 </nav>
 
+<div class="modal" id="modal">
 
-<!-- =======================================================
-     MODAL
-======================================================= -->
+<div class="modal-box">
 
-<div
- class="modal"
- id="modal">
+<div class="modal-head">
 
- <div class="modal-box">
+<h2 id="modalTitle">PilzMap</h2>
 
-  <div class="modal-head">
-
-   <h2 id="modalTitle">
-    PilzMap
-   </h2>
-
-   <button
-    class="close"
-    id="modalClose">
-    ×
-   </button>
-
-  </div>
-
-  <div id="modalContent"></div>
-
- </div>
+<button class="close" id="modalClose">×</button>
 
 </div>
 
+<div id="modalContent"></div>
+
+</div>
+
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+"use strict";
 
 /* =========================================================
-   PILZDATEN
+PILZDATEN
 ========================================================= */
 
 const species = [
 
- {
-  id:"steinpilz",
-  name:"Steinpilz",
-  latin:"Boletus edulis",
-  habitat:"Buchen-, Eichen-, Fichten- und Mischwälder",
-  season:"Sommer–Herbst",
-  features:"Brauner Hut, Röhren und heller Stiel mit Netzzeichnung.",
-  trees:["Buche","Eiche","Fichte"],
-  icon:"🍄"
- },
+{
+id:"steinpilz",
+name:"Steinpilz",
+latin:"Boletus edulis",
+emoji:"🍄",
+habitat:"Buchen-, Eichen-, Fichten- und Mischwälder",
+season:"Sommer–Herbst",
+features:"Brauner Hut, Röhren statt Lamellen, heller Stiel mit Netzzeichnung."
+},
 
- {
-  id:"marone",
-  name:"Maronen-Röhrling",
-  latin:"Imleria badia",
-  habitat:"Vor allem Nadel- und Mischwälder",
-  season:"Sommer–Herbst",
-  features:"Brauner Hut und gelbliche Röhren.",
-  trees:["Fichte","Kiefer"],
-  icon:"🍄"
- },
+{
+id:"marone",
+name:"Maronen-Röhrling",
+latin:"Imleria badia",
+emoji:"🍄",
+habitat:"Vor allem Nadel- und Mischwälder",
+season:"Sommer–Herbst",
+features:"Brauner Hut, gelbliche Röhren, Poren können sich bläulich verfärben."
+},
 
- {
-  id:"pfifferling",
-  name:"Pfifferling",
-  latin:"Cantharellus cibarius",
-  habitat:"Misch- und Nadelwälder",
-  season:"Sommer–Herbst",
-  features:"Gelbe Farbe und Leisten unter dem Hut.",
-  trees:["Fichte","Buche","Eiche"],
-  icon:"🍄"
- },
+{
+id:"pfifferling",
+name:"Pfifferling",
+latin:"Cantharellus cibarius",
+emoji:"🍄",
+habitat:"Misch- und Nadelwälder",
+season:"Sommer–Herbst",
+features:"Gelbe Farbe, Leisten unter dem Hut."
+},
 
- {
-  id:"birkenpilz",
-  name:"Birkenpilz",
-  latin:"Leccinum scabrum",
-  habitat:"Vor allem bei Birken",
-  season:"Sommer–Herbst",
-  features:"Brauner Hut und heller Stiel mit dunklen Schüppchen.",
-  trees:["Birke"],
-  icon:"🍄"
- },
+{
+id:"birkenpilz",
+name:"Birkenpilz",
+latin:"Leccinum scabrum",
+emoji:"🍄",
+habitat:"Typisch in Verbindung mit Birken",
+season:"Sommer–Herbst",
+features:"Heller bis brauner Hut, heller Stiel mit dunklen Schüppchen."
+},
 
- {
-  id:"parasol",
-  name:"Parasol",
-  latin:"Macrolepiota procera",
-  habitat:"Waldränder, Lichtungen und offene Flächen",
-  season:"Sommer–Herbst",
-  features:"Großer Schirmhut und genatterter Stiel.",
-  trees:["Waldrand","Wiese"],
-  icon:"🍄"
- },
+{
+id:"parasol",
+name:"Parasol",
+latin:"Macrolepiota procera",
+emoji:"🍄",
+habitat:"Waldränder, Lichtungen und Wiesen",
+season:"Sommer–Herbst",
+features:"Großer Schirmhut, genatterter Stiel und Ring."
+},
 
- {
-  id:"fliegenpilz",
-  name:"Fliegenpilz",
-  latin:"Amanita muscaria",
-  habitat:"Wälder, oft bei Birke und Fichte",
-  season:"Sommer–Herbst",
-  features:"Roter Hut mit weißen Punkten und Lamellen.",
-  trees:["Birke","Fichte"],
-  icon:"🍄",
-  danger:true
- }
+{
+id:"fliegenpilz",
+name:"Fliegenpilz",
+latin:"Amanita muscaria",
+emoji:"🍄",
+habitat:"Wälder, oft bei Birke und Fichte",
+season:"Sommer–Herbst",
+features:"Roter Hut mit weißen Resten, Lamellen, Ring und Knolle.",
+danger:true
+}
 
 ];
 
 
 /* =========================================================
-   KARTE
+KARTE
 ========================================================= */
 
-const map =
- L.map(
-  "map",
-  {
-   zoomControl:false
-  }
- )
- .setView(
-  [53.55,9.99],
-  12
- );
-
+const map = L.map("map",{zoomControl:false})
+.setView([53.55,9.99],12);
 
 const mapLayer =
- L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-   maxZoom:19,
-   attribution:"© OpenStreetMap"
-  }
- );
-
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+maxZoom:19,
+attribution:"© OpenStreetMap"
+}
+);
 
 const satelliteLayer =
- L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  {
-   maxZoom:19,
-   attribution:"Tiles © Esri"
-  }
- )
- .addTo(map);
+L.tileLayer(
+"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+{
+maxZoom:19,
+attribution:"Tiles © Esri"
+}
+).addTo(map);
 
 
 /* =========================================================
-   LAYER
+VARIABLEN
 ========================================================= */
 
 let mushroomVisible = true;
 let forestVisible = true;
 let communityVisible = false;
 
-let mushroomLayer =
- L.layerGroup().addTo(map);
-
-let forestLayer =
- L.layerGroup().addTo(map);
-
-let communityLayer =
- L.layerGroup().addTo(map);
-
 let userMarker = null;
 let userAccuracy = null;
 
-let currentPosition = null;
+let mushroomLayer = L.layerGroup().addTo(map);
+let forestLayer = L.layerGroup().addTo(map);
+let natureLayer = L.layerGroup().addTo(map);
+let treeLayer = L.layerGroup().addTo(map);
+let communityLayer = L.layerGroup().addTo(map);
+
+let selectionCircle = null;
+let selectionMarker = null;
 
 let routeLine = null;
 let routePoints = [];
@@ -1628,1886 +1184,1847 @@ let routeDistance = 0;
 let tracking = false;
 let watchId = null;
 
+let currentPosition = null;
+let currentHabitat = null;
+
+let liveRequestId = 0;
+
+const LIVE_RADIUS = 700;
+
 
 /* =========================================================
-   HILFSFUNKTIONEN
+HILFSFUNKTIONEN
 ========================================================= */
 
 function esc(value){
 
- return String(value ?? "")
-  .replace(
-   /[&<>"']/g,
-   c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-   }[c])
-  );
+return String(value ?? "")
+.replace(/[&<>"']/g,c => ({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#039;"
+}[c]));
 
 }
 
 
 function setToggle(id,on){
 
- const element =
-  document.getElementById(id);
+const el = document.getElementById(id);
 
- if(element){
+if(!el)return;
 
-  element.classList.toggle(
-   "on",
-   on
-  );
-
- }
+el.classList.toggle("on",on);
 
 }
 
 
 function openModal(title,html){
 
- document.getElementById(
-  "modalTitle"
- ).textContent = title;
-
- document.getElementById(
-  "modalContent"
- ).innerHTML = html;
-
- document.getElementById(
-  "modal"
- ).classList.add("open");
+document.getElementById("modalTitle").textContent = title;
+document.getElementById("modalContent").innerHTML = html;
+document.getElementById("modal").classList.add("open");
 
 }
 
 
 function closeModal(){
 
- document.getElementById(
-  "modal"
- ).classList.remove("open");
+document.getElementById("modal").classList.remove("open");
+
+}
+
+
+/* =========================================================
+PILZ MARKER
+========================================================= */
+
+function mushroomIcon(){
+
+return L.divIcon({
+
+className:"",
+
+html:`<div class="mush-marker">🍄</div>`,
+
+iconSize:[44,44],
+
+iconAnchor:[22,22],
+
+popupAnchor:[0,-22]
+
+});
+
+}
+
+
+/*
+Keine erfundenen Fundorte mehr.
+Die Pilzspots können später aus einer echten
+Fund-Datenquelle ergänzt werden.
+*/
+
+function drawMushrooms(){
+
+mushroomLayer.clearLayers();
+
+document.getElementById("spotCount").textContent =
+currentHabitat
+? currentHabitat.forests
+: "0";
+
+}
+
+
+/* =========================================================
+LIVE OVERPASS
+========================================================= */
+
+async function queryOverpass(lat,lon,radius=LIVE_RADIUS){
+
+const query = `
+[out:json][timeout:25];
+
+(
+  way["natural"="wood"](around:${radius},${lat},${lon});
+  way["landuse"="forest"](around:${radius},${lat},${lon});
+
+  way["natural"="scrub"](around:${radius},${lat},${lon});
+  way["natural"="heath"](around:${radius},${lat},${lon});
+  way["landuse"="meadow"](around:${radius},${lat},${lon});
+  way["natural"="grassland"](around:${radius},${lat},${lon});
+  way["natural"="wetland"](around:${radius},${lat},${lon});
+  way["natural"="water"](around:${radius},${lat},${lon});
+  way["landuse"="orchard"](around:${radius},${lat},${lon});
+
+  node["natural"="tree"](around:${radius},${lat},${lon});
+  node["natural"="tree"]["species"](around:${radius},${lat},${lon});
+  node["natural"="tree"]["genus"](around:${radius},${lat},${lon});
+  node["natural"="tree"]["taxon"](around:${radius},${lat},${lon});
+
+  way["natural"="tree_row"](around:${radius},${lat},${lon});
+);
+
+out body geom;
+`;
+
+const endpoints = [
+
+"https://overpass-api.de/api/interpreter",
+
+"https://overpass.kumi.systems/api/interpreter",
+
+"https://overpass.private.coffee/api/interpreter"
+
+];
+
+let lastError = null;
+
+for(const endpoint of endpoints){
+
+try{
+
+const controller = new AbortController();
+
+const timeout = setTimeout(
+() => controller.abort(),
+28000
+);
+
+const response = await fetch(
+endpoint,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+},
+body:"data="+encodeURIComponent(query),
+signal:controller.signal
+}
+);
+
+clearTimeout(timeout);
+
+if(!response.ok){
+
+throw new Error(
+"HTTP "+response.status
+);
+
+}
+
+const data = await response.json();
+
+if(data && Array.isArray(data.elements)){
+
+return data.elements;
+
+}
+
+throw new Error("Keine gültigen Daten");
+
+}
+catch(error){
+
+lastError = error;
+
+}
+
+}
+
+throw lastError || new Error("Overpass nicht erreichbar");
+
+}
+
+
+/* =========================================================
+GEOMETRIE
+========================================================= */
+
+function elementGeometry(element){
+
+if(!element.geometry)
+return null;
+
+return element.geometry
+.map(point => [
+point.lat,
+point.lon
+])
+.filter(point =>
+Number.isFinite(point[0]) &&
+Number.isFinite(point[1])
+);
+
+}
+
+
+/* =========================================================
+LIVE LAYER LÖSCHEN
+========================================================= */
+
+function clearLiveLayers(){
+
+forestLayer.clearLayers();
+natureLayer.clearLayers();
+treeLayer.clearLayers();
+
+if(selectionCircle){
+
+map.removeLayer(selectionCircle);
+selectionCircle = null;
+
+}
+
+if(selectionMarker){
+
+map.removeLayer(selectionMarker);
+selectionMarker = null;
+
+}
+
+}
+
+
+/* =========================================================
+LIVE DATEN ZEICHNEN
+========================================================= */
+
+function renderLiveHabitat(elements,lat,lon){
+
+clearLiveLayers();
+
+let forestCount = 0;
+let natureCount = 0;
+let treeCount = 0;
+
+const treeTypes = new Set();
+
+elements.forEach(element => {
+
+const tags = element.tags || {};
+const type = element.type;
+
+const geometry = elementGeometry(element);
+
+if(
+type === "way" &&
+geometry &&
+geometry.length >= 3
+){
+
+const natural = tags.natural || "";
+const landuse = tags.landuse || "";
+
+const isForest =
+natural === "wood" ||
+landuse === "forest";
+
+const isNature =
+[
+"scrub",
+"heath",
+"grassland",
+"wetland",
+"water"
+].includes(natural) ||
+[
+"meadow",
+"orchard"
+].includes(landuse);
+
+if(isForest){
+
+forestCount++;
+
+if(forestVisible){
+
+L.polygon(
+geometry,
+{
+className:"habitat-polygon",
+color:"#22e3ad",
+weight:2,
+fillColor:"#17d99d",
+fillOpacity:.13
+}
+)
+.bindPopup(`
+<b>🌲 Waldfläche</b><br>
+<small>
+${esc(
+tags.name ||
+tags.species ||
+tags.leaf_type ||
+"OpenStreetMap-Waldfläche"
+)}
+</small>
+`)
+.addTo(forestLayer);
+
+}
+
+}
+
+else if(isNature){
+
+natureCount++;
+
+if(forestVisible){
+
+L.polygon(
+geometry,
+{
+className:"live-nature",
+color:"#6cf0c6",
+weight:1.5,
+fillColor:"#6cf0c6",
+fillOpacity:.08
+}
+)
+.bindPopup(`
+<b>🌿 Naturfläche</b><br>
+<small>
+${esc(
+tags.name ||
+tags.natural ||
+tags.landuse ||
+"Naturfläche"
+)}
+</small>
+`)
+.addTo(natureLayer);
+
+}
+
+}
+
+if(
+natural === "tree_row"
+){
+
+natureCount++;
+
+if(forestVisible){
+
+L.polyline(
+geometry,
+{
+color:"#6cf0c6",
+weight:3,
+opacity:.65
+}
+)
+.addTo(natureLayer);
+
+}
+
+}
+
+}
+
+
+if(
+type === "node" &&
+tags.natural === "tree"
+){
+
+treeCount++;
+
+const treeText =
+[
+tags.species,
+tags.genus,
+tags.taxon,
+tags["species:de"],
+tags["name:de"]
+]
+.filter(Boolean)
+.join(" ");
+
+if(treeText){
+
+treeTypes.add(
+treeText.toLowerCase()
+);
+
+}
+
+if(forestVisible){
+
+L.marker(
+[element.lat,element.lon],
+{
+icon:L.divIcon({
+className:"",
+html:`<div class="tree-marker">🌳</div>`,
+iconSize:[20,20],
+iconAnchor:[10,10]
+})
+}
+)
+.bindPopup(`
+<b>🌳 Baum</b><br>
+<small>
+${esc(
+tags["species:de"] ||
+tags.species ||
+tags.genus ||
+tags.taxon ||
+"Art nicht angegeben"
+)}
+</small>
+`)
+.addTo(treeLayer);
+
+}
+
+}
+
+});
+
+
+/* Auswahlkreis */
+
+selectionCircle =
+L.circle(
+[lat,lon],
+{
+radius:LIVE_RADIUS,
+className:"selection-circle",
+color:"#31a9ff",
+fillColor:"#31a9ff",
+fillOpacity:.06,
+weight:2,
+dashArray:"8 8"
+}
+).addTo(map);
+
+
+selectionMarker =
+L.circleMarker(
+[lat,lon],
+{
+radius:6,
+color:"#fff",
+weight:2,
+fillColor:"#31a9ff",
+fillOpacity:1
+}
+)
+.bindPopup(
+"📍 Live-Habitat · 700 m"
+)
+.addTo(map);
+
+
+currentHabitat = {
+
+forests:forestCount,
+nature:natureCount,
+trees:treeCount,
+treeTypes:[...treeTypes]
+
+};
+
+document.getElementById(
+"spotCount"
+).textContent =
+forestCount;
+
+
+showHabitatInfo(
+currentHabitat
+);
+
+}
+
+
+/* =========================================================
+HABITAT AUSWERTEN
+========================================================= */
+
+function showHabitatInfo(habitat){
+
+const text =
+document.getElementById("habitatText");
+
+const speciesBox =
+document.getElementById("liveSpecies");
+
+const types =
+habitat.treeTypes.join(" ");
+
+let habitatName =
+"Naturbereich";
+
+let matching = [];
+
+
+/* Wald */
+
+if(habitat.forests > 0){
+
+habitatName = "🌲 Waldgebiet";
+
+if(
+/birke|betula/.test(types)
+){
+
+habitatName =
+"🌳 Wald mit Birken-Hinweisen";
+
+matching.push(
+species.find(x => x.id === "birkenpilz")
+);
+
+}
+
+if(
+/fichte|picea|spruce/.test(types)
+){
+
+matching.push(
+species.find(x => x.id === "marone")
+);
+
+matching.push(
+species.find(x => x.id === "fliegenpilz")
+);
+
+}
+
+if(
+/buche|fagus|eiche|quercus/.test(types)
+){
+
+matching.push(
+species.find(x => x.id === "steinpilz")
+);
+
+}
+
+if(
+/kiefer|pinus|tanne|abies/.test(types)
+){
+
+matching.push(
+species.find(x => x.id === "marone")
+);
+
+}
+
+if(!matching.length){
+
+matching = [
+species.find(x => x.id === "steinpilz"),
+species.find(x => x.id === "marone"),
+species.find(x => x.id === "pfifferling")
+];
+
+}
+
+}
+
+
+/* Kein Wald */
+
+else if(habitat.nature > 0){
+
+habitatName =
+"🌿 Offener Naturbereich";
+
+matching = [
+
+species.find(x => x.id === "parasol")
+
+];
+
+}
+
+
+/* Keine Daten */
+
+else{
+
+habitatName =
+"📍 Keine detaillierten Habitatdaten";
+
+matching = [];
+
+}
+
+
+matching =
+matching.filter(Boolean);
+
+const unique = [];
+
+matching.forEach(item => {
+
+if(
+!unique.some(
+x => x.id === item.id
+)
+){
+
+unique.push(item);
+
+}
+
+});
+
+
+text.innerHTML = `
+<b>${esc(habitatName)}</b><br>
+<small>
+${habitat.forests} Waldflächen ·
+${habitat.nature} weitere Naturflächen ·
+${habitat.trees} erfasste Bäume
+</small>
+<br><br>
+Die Angaben stammen aus OpenStreetMap und
+zeigen vorhandene Kartendaten. Sie sind kein
+Nachweis dafür, dass ein Pilz tatsächlich dort wächst.
+`;
+
+
+if(unique.length){
+
+speciesBox.innerHTML = `
+<p style="color:#b5c3bd;margin-bottom:8px">
+🍄 Möglicherweise passende Arten:
+</p>
+
+<div class="species-grid">
+
+${unique.map(item => `
+
+<button
+class="species-card"
+data-live-species="${esc(item.id)}">
+
+<span style="font-size:24px">
+🍄
+</span>
+
+<b>${esc(item.name)}</b>
+
+<small>${esc(item.latin)}</small>
+
+</button>
+
+`).join("")}
+
+</div>
+`;
+
+speciesBox
+.querySelectorAll("[data-live-species]")
+.forEach(button => {
+
+button.onclick = () =>
+showSpecies(
+button.dataset.liveSpecies
+);
+
+});
+
+}
+else{
+
+speciesBox.innerHTML = "";
+
+}
+
+}
+
+
+/* =========================================================
+LIVE HABITAT LADEN
+========================================================= */
+
+async function loadLiveHabitat(
+lat,
+lon,
+center=false
+){
+
+const requestId =
+++liveRequestId;
+
+document.getElementById(
+"gpsText"
+).textContent =
+"🌐 Live-Habitat wird geladen…";
+
+try{
+
+const elements =
+await queryOverpass(
+lat,
+lon,
+LIVE_RADIUS
+);
+
+if(
+requestId !== liveRequestId
+)
+return;
+
+renderLiveHabitat(
+elements,
+lat,
+lon
+);
+
+document.getElementById(
+"gpsText"
+).textContent =
+`Live-Daten · 700 m · ${elements.length} Objekte`;
+
+if(center){
+
+map.setView(
+[lat,lon],
+14
+);
+
+}
+
+}
+catch(error){
+
+if(
+requestId !== liveRequestId
+)
+return;
+
+console.error(error);
+
+document.getElementById(
+"gpsText"
+).textContent =
+"Live-Daten momentan nicht erreichbar";
+
+document.getElementById(
+"habitatText"
+).innerHTML =
+`
+<b>⚠️ Live-Daten konnten nicht geladen werden.</b><br>
+<small>
+Bitte kurz warten und erneut GPS aktivieren
+oder auf einen Punkt auf der Karte tippen.
+</small>
+`;
+
+}
+
+}
+
+
+/* =========================================================
+KARTENKLICK → LIVE DATEN
+========================================================= */
+
+map.on(
+"click",
+event => {
+
+loadLiveHabitat(
+event.latlng.lat,
+event.latlng.lng,
+false
+);
+
+}
+);
+
+
+/* =========================================================
+GPS
+========================================================= */
+
+function locateUser(center){
+
+if(!navigator.geolocation){
+
+document.getElementById(
+"gpsText"
+).textContent =
+"GPS wird nicht unterstützt.";
+
+return;
+
+}
+
+document.getElementById(
+"gpsText"
+).textContent =
+"GPS wird ermittelt…";
+
+navigator.geolocation.getCurrentPosition(
+
+pos => {
+
+updateUserPosition(
+pos,
+center
+);
+
+loadWeather();
+
+loadLiveHabitat(
+pos.coords.latitude,
+pos.coords.longitude,
+center
+);
+
+},
+
+() => {
+
+document.getElementById(
+"gpsText"
+).textContent =
+"GPS nicht verfügbar";
+
+},
+
+{
+enableHighAccuracy:true,
+timeout:12000,
+maximumAge:5000
+}
+
+);
+
+}
+
+
+function updateUserPosition(pos,center){
+
+const lat =
+pos.coords.latitude;
+
+const lon =
+pos.coords.longitude;
+
+const accuracy =
+pos.coords.accuracy;
+
+currentPosition =
+[lat,lon];
+
+if(!userMarker){
+
+userMarker =
+L.marker(
+[lat,lon]
+)
+.addTo(map)
+.bindPopup(
+"📍 Dein Standort"
+);
+
+}
+else{
+
+userMarker.setLatLng(
+[lat,lon]
+);
+
+}
+
+if(!userAccuracy){
+
+userAccuracy =
+L.circle(
+[lat,lon],
+{
+radius:accuracy,
+color:"#31a9ff",
+fillColor:"#31a9ff",
+fillOpacity:.12,
+weight:1
+}
+)
+.addTo(map);
+
+}
+else{
+
+userAccuracy
+.setLatLng([lat,lon])
+.setRadius(accuracy);
+
+}
+
+document.getElementById(
+"gpsText"
+).textContent =
+`GPS-Standort gefunden · ±${Math.round(accuracy)} m`;
+
+if(center){
+
+map.setView(
+[lat,lon],
+14
+);
+
+}
+
+}
+
+
+/* =========================================================
+ROUTE
+========================================================= */
+
+document.getElementById(
+"quickRoute"
+).onclick =
+startRoute;
+
+
+function startRoute(){
+
+if(!navigator.geolocation){
+
+alert("GPS wird benötigt.");
+
+return;
+
+}
+
+if(tracking){
+
+navigator.geolocation.clearWatch(
+watchId
+);
+
+watchId=null;
+tracking=false;
+
+document.getElementById(
+"quickRoute"
+).textContent =
+"🐾 Route";
+
+return;
+
+}
+
+routePoints=[];
+routeDistance=0;
+
+if(routeLine){
+
+map.removeLayer(routeLine);
+
+}
+
+routeLine =
+L.polyline(
+[],
+{
+color:"#ff9b32",
+weight:5
+}
+).addTo(map);
+
+tracking=true;
+
+document.getElementById(
+"quickRoute"
+).textContent =
+"■ Stop";
+
+watchId =
+navigator.geolocation.watchPosition(
+
+pos => {
+
+const point =
+[
+pos.coords.latitude,
+pos.coords.longitude
+];
+
+if(routePoints.length){
+
+const last =
+routePoints[
+routePoints.length-1
+];
+
+const distance =
+map.distance(
+last,
+point
+);
+
+if(distance > 3){
+
+routeDistance += distance;
+
+document.getElementById(
+"routeStat"
+).textContent =
+formatDistance(routeDistance);
+
+}
+
+}
+
+routePoints.push(point);
+
+routeLine.setLatLngs(routePoints);
+
+updateUserPosition(pos,false);
+
+},
+
+() => {},
+
+{
+enableHighAccuracy:true,
+maximumAge:2000,
+timeout:15000
+}
+
+);
 
 }
 
 
 function formatDistance(meters){
 
- if(
-  meters < 1000
- ){
+if(meters < 1000){
 
-  return Math.round(meters)+" m";
+return Math.round(meters)+" m";
 
- }
+}
 
- return (
-  meters / 1000
- ).toFixed(1)+" km";
+return (meters/1000).toFixed(1)+" km";
 
 }
 
 
 /* =========================================================
-   PILZSPOTS
-========================================================= */
-
-const demoSpots = [
-
- [53.590,9.935,"Steinpilz"],
- [53.570,10.040,"Pfifferling"],
- [53.625,10.020,"Maronen-Röhrling"],
- [53.525,9.910,"Birkenpilz"],
- [53.500,10.080,"Parasol"],
- [53.610,9.900,"Fliegenpilz"],
- [53.545,10.120,"Steinpilz"],
- [53.655,9.955,"Pfifferling"],
- [53.485,9.990,"Maronen-Röhrling"],
- [53.575,9.850,"Parasol"],
- [53.515,10.020,"Birkenpilz"],
- [53.645,10.095,"Fliegenpilz"]
-
-];
-
-
-function mushroomIcon(){
-
- return L.divIcon({
-
-  className:"",
-
-  html:`
-   <div class="mush-marker">
-    🍄
-   </div>
-  `,
-
-  iconSize:[43,43],
-
-  iconAnchor:[21,21],
-
-  popupAnchor:[0,-21]
-
- });
-
-}
-
-
-function drawMushrooms(){
-
- mushroomLayer.clearLayers();
-
- if(!mushroomVisible)
-  return;
-
- demoSpots.forEach(
-  spot => {
-
-   const marker =
-    L.marker(
-     [spot[0],spot[1]],
-     {
-      icon:mushroomIcon()
-     }
-    );
-
-   marker.bindPopup(`
-    <div class="mush-popup">
-
-     <b>
-      🍄 ${esc(spot[2])}
-     </b>
-
-     <br><br>
-
-     <small>
-      Beispiel-Fundpunkt
-     </small>
-
-    </div>
-   `);
-
-   marker.addTo(
-    mushroomLayer
-   );
-
-  }
- );
-
- document.getElementById(
-  "spotCount"
- ).textContent =
-  demoSpots.length;
-
-}
-
-
-drawMushrooms();
-
-
-/* =========================================================
-   WALDFLÄCHEN / HABITATE
-========================================================= */
-
-const forestAreas = [
-
- {
-  name:"Mischwald",
-  trees:["Buche","Eiche","Fichte"],
-  mushrooms:["Steinpilz","Pfifferling","Fliegenpilz"],
-
-  points:[
-   [53.620,9.875],
-   [53.650,9.900],
-   [53.645,9.955],
-   [53.610,9.940],
-   [53.600,9.890]
-  ]
- },
-
- {
-  name:"Nadelwald",
-  trees:["Fichte","Kiefer"],
-  mushrooms:["Maronen-Röhrling","Pfifferling","Fliegenpilz"],
-
-  points:[
-   [53.535,10.045],
-   [53.570,10.075],
-   [53.555,10.130],
-   [53.515,10.105],
-   [53.505,10.060]
-  ]
- },
-
- {
-  name:"Mischwald",
-  trees:["Birke","Buche","Eiche"],
-  mushrooms:["Birkenpilz","Steinpilz","Pfifferling"],
-
-  points:[
-   [53.475,9.900],
-   [53.515,9.925],
-   [53.520,9.985],
-   [53.480,10.010],
-   [53.455,9.950]
-  ]
- },
-
- {
-  name:"Nadel-/Mischwald",
-  trees:["Fichte","Birke"],
-  mushrooms:["Fliegenpilz","Maronen-Röhrling","Birkenpilz"],
-
-  points:[
-   [53.590,10.105],
-   [53.625,10.145],
-   [53.605,10.190],
-   [53.570,10.155]
-  ]
- }
-
-];
-
-
-function drawForest(){
-
- forestLayer.clearLayers();
-
- if(!forestVisible)
-  return;
-
-
- forestAreas.forEach(
-  area => {
-
-   const polygon =
-    L.polygon(
-     area.points,
-     {
-      color:"#22e3ad",
-      weight:2,
-      fillColor:"#17d99d",
-      fillOpacity:.13
-     }
-    );
-
-
-   polygon.on(
-    "click",
-    event => {
-
-     L.DomEvent.stopPropagation(
-      event
-     );
-
-     showHabitatInfo(
-      event.latlng,
-      area
-     );
-
-    }
-   );
-
-
-   polygon.addTo(
-    forestLayer
-   );
-
-  }
- );
-
-}
-
-
-drawForest();
-
-
-/* =========================================================
-   HABITAT-INFOS BEI KARTENKLICK
-========================================================= */
-
-function getForestAtPoint(latlng){
-
- let found = null;
-
-
- forestAreas.forEach(
-  area => {
-
-   const polygon =
-    L.polygon(
-     area.points
-    );
-
-   if(
-    polygon.getBounds()
-      .contains(latlng)
-   ){
-
-    found = area;
-
-   }
-
-  }
- );
-
-
- return found;
-
-}
-
-
-function showHabitatInfo(
- latlng,
- area = null
-){
-
- const lat =
-  latlng.lat;
-
- const lon =
-  latlng.lng;
-
-
- if(!area){
-
-  area =
-   getForestAtPoint(
-    latlng
-   );
-
- }
-
-
- let habitatName =
-  "Offene Fläche / unbekannt";
-
- let trees = [];
- let possible = [];
-
-
- if(area){
-
-  habitatName =
-   area.name;
-
-  trees =
-   area.trees;
-
-  possible =
-   area.mushrooms;
-
- }
- else{
-
-  habitatName =
-   "Kein hinterlegter Wald";
-
-  possible =
-   ["Parasol"];
-
- }
-
-
- const nearby =
-  demoSpots
-
-   .map(
-    spot => {
-
-     const distance =
-      map.distance(
-       [lat,lon],
-       [spot[0],spot[1]]
-      );
-
-     return {
-      name:spot[2],
-      distance
-     };
-
-    }
-   )
-
-   .filter(
-    spot =>
-     spot.distance <= 3000
-   )
-
-   .sort(
-    (a,b) =>
-     a.distance-b.distance
-   );
-
-
- const treeHtml =
-  trees.length
-
-   ? trees
-      .map(
-       tree =>
-        `<span class="habitat-badge">
-          🌳 ${esc(tree)}
-        </span>`
-      )
-      .join("")
-
-   : `
-      <span class="habitat-badge">
-       🌱 keine Baumdaten
-      </span>
-     `;
-
-
- const possibleHtml =
-  possible
-   .map(
-    name => {
-
-     const mushroom =
-      species.find(
-       item =>
-        item.name === name
-      );
-
-     return `
-      <button
-       class="possible-mushroom"
-       data-species="${esc(
-        mushroom ? mushroom.id : ""
-       )}">
-
-       🍄 ${esc(name)}
-
-      </button>
-     `;
-
-    }
-   )
-   .join("");
-
-
- let nearbyHtml = "";
-
-
- if(nearby.length){
-
-  nearbyHtml =
-   nearby
-    .slice(0,5)
-    .map(
-     spot => `
-      <div class="nearby-mushroom">
-
-       <span>
-        🍄
-       </span>
-
-       <div>
-
-        <b>
-         ${esc(spot.name)}
-        </b>
-
-        <small>
-         ca. ${formatDistance(
-          spot.distance
-         )}
-        </small>
-
-       </div>
-
-      </div>
-     `
-    )
-    .join("");
-
- }
- else{
-
-  nearbyHtml = `
-   <div class="no-results">
-    Keine bekannten Spots innerhalb von 3 km.
-   </div>
-  `;
-
- }
-
-
- openModal(
-  "📍 Kartenpunkt",
-
-  `
-   <div class="map-info">
-
-    <div class="map-info-main">
-
-     <div class="big-habitat-icon">
-      ${area ? "🌲" : "🌱"}
-     </div>
-
-     <div>
-
-      <b>
-       ${esc(habitatName)}
-      </b>
-
-      <small>
-       ${lat.toFixed(5)},
-       ${lon.toFixed(5)}
-      </small>
-
-     </div>
-
-    </div>
-
-
-    <div class="map-info-section">
-
-     <h3>
-      🌳 Baum-/Vegetationsbestand
-     </h3>
-
-     <div class="habitat-badges">
-      ${treeHtml}
-     </div>
-
-    </div>
-
-
-    <div class="map-info-section">
-
-     <h3>
-      🍄 Mögliche Pilzarten
-     </h3>
-
-     <p>
-      Diese Arten passen grundsätzlich zu den
-      hinterlegten Habitatdaten. Das ist kein
-      bestätigter Fund.
-     </p>
-
-     <div class="possible-grid">
-      ${possibleHtml}
-     </div>
-
-    </div>
-
-
-    <div class="map-info-section">
-
-     <h3>
-      📍 Pilzspots in der Nähe
-     </h3>
-
-     ${nearbyHtml}
-
-    </div>
-
-
-    <p class="map-warning">
-
-     ⚠️ Die App kann aus Kartendaten nicht sicher
-     bestimmen, welche Pilze tatsächlich an einem
-     bestimmten Punkt wachsen. Die Angaben dienen
-     nur zur Orientierung.
-
-    </p>
-
-   </div>
-  `
- );
-
-
- document
-  .querySelectorAll(
-   ".possible-mushroom"
-  )
-  .forEach(
-   button => {
-
-    button.onclick =
-     () => {
-
-      showSpecies(
-       button.dataset.species
-      );
-
-     };
-
-   }
-  );
-
-}
-
-
-/* =========================================================
-   BELIEBIGE KARTENSTELLE ANKLICKEN
-========================================================= */
-
-map.on(
- "click",
- event => {
-
-  showHabitatInfo(
-   event.latlng
-  );
-
- }
-);
-
-
-/* =========================================================
-   MENÜ
-========================================================= */
-
-const sideMenu =
- document.getElementById(
-  "sideMenu"
- );
-
-const menuBtn =
- document.getElementById(
-  "menuBtn"
- );
-
-
-menuBtn.addEventListener(
- "click",
- () => {
-
-  const open =
-   sideMenu.classList.toggle(
-    "open"
-   );
-
-  menuBtn.classList.toggle(
-   "active",
-   open
-  );
-
-  menuBtn.textContent =
-   open ? "×" : "☰";
-
- }
-);
-
-
-/* =========================================================
-   KARTENLAYER
-========================================================= */
-
-document.getElementById(
- "mapLayerBtn"
-).onclick =
- () => {
-
-  if(
-   map.hasLayer(
-    satelliteLayer
-   )
-  ){
-
-   map.removeLayer(
-    satelliteLayer
-   );
-
-  }
-
-  if(
-   !map.hasLayer(
-    mapLayer
-   )
-  ){
-
-   map.addLayer(
-    mapLayer
-   );
-
-  }
-
-  setToggle(
-   "satToggle",
-   false
-  );
-
- };
-
-
-document.getElementById(
- "satLayerBtn"
-).onclick =
- () => {
-
-  if(
-   map.hasLayer(
-    mapLayer
-   )
-  ){
-
-   map.removeLayer(
-    mapLayer
-   );
-
-  }
-
-  if(
-   !map.hasLayer(
-    satelliteLayer
-   )
-  ){
-
-   map.addLayer(
-    satelliteLayer
-   );
-
-  }
-
-  setToggle(
-   "satToggle",
-   true
-  );
-
- };
-
-
-/* =========================================================
-   WALD TOGGLE
-========================================================= */
-
-document.getElementById(
- "forestRow"
-).onclick =
- () => {
-
-  forestVisible =
-   !forestVisible;
-
-  setToggle(
-   "forestToggle",
-   forestVisible
-  );
-
-  drawForest();
-
- };
-
-
-/* =========================================================
-   PILZ TOGGLE
-========================================================= */
-
-document.getElementById(
- "mushRow"
-).onclick =
- () => {
-
-  mushroomVisible =
-   !mushroomVisible;
-
-  setToggle(
-   "mushToggle",
-   mushroomVisible
-  );
-
-  drawMushrooms();
-
- };
-
-
-/* =========================================================
-   COMMUNITY
-========================================================= */
-
-document.getElementById(
- "communityRow"
-).onclick =
- () => {
-
-  communityVisible =
-   !communityVisible;
-
-  setToggle(
-   "communityToggle",
-   communityVisible
-  );
-
-  communityLayer.clearLayers();
-
-
-  if(
-   communityVisible
-  ){
-
-   [
-    [53.565,9.955],
-    [53.535,10.015],
-    [53.615,9.965]
-   ]
-   .forEach(
-    position => {
-
-     L.circleMarker(
-      position,
-      {
-       radius:7,
-       color:"#a66cff",
-       fillColor:"#a66cff",
-       fillOpacity:.8
-      }
-     )
-     .bindPopup(
-      "👥 Community-Spot"
-     )
-     .addTo(
-      communityLayer
-     );
-
-    }
-   );
-
-  }
-
- };
-
-
-/* =========================================================
-   ZOOM
-========================================================= */
-
-document.getElementById(
- "zoomIn"
-).onclick =
- () => map.zoomIn();
-
-
-document.getElementById(
- "zoomOut"
-).onclick =
- () => map.zoomOut();
-
-
-/* =========================================================
-   GPS
-========================================================= */
-
-document.getElementById(
- "locBtn"
-).onclick =
- () => locateUser(true);
-
-
-document.getElementById(
- "gpsTop"
-).onclick =
- () => locateUser(true);
-
-
-document.getElementById(
- "quickGps"
-).onclick =
- () => locateUser(true);
-
-
-function locateUser(center){
-
- if(
-  !navigator.geolocation
- ){
-
-  document.getElementById(
-   "gpsText"
-  ).textContent =
-   "GPS wird nicht unterstützt.";
-
-  return;
-
- }
-
-
- document.getElementById(
-  "gpsText"
- ).textContent =
-  "GPS wird ermittelt…";
-
-
- navigator.geolocation.getCurrentPosition(
-
-  position => {
-
-   updateUserPosition(
-    position,
-    center
-   );
-
-   loadWeather();
-
-  },
-
-  () => {
-
-   document.getElementById(
-    "gpsText"
-   ).textContent =
-    "GPS nicht verfügbar";
-
-  },
-
-  {
-   enableHighAccuracy:true,
-   timeout:12000,
-   maximumAge:5000
-  }
-
- );
-
-}
-
-
-function updateUserPosition(
- position,
- center
-){
-
- const lat =
-  position.coords.latitude;
-
- const lon =
-  position.coords.longitude;
-
- const accuracy =
-  position.coords.accuracy;
-
-
- currentPosition =
-  [lat,lon];
-
-
- if(!userMarker){
-
-  userMarker =
-   L.marker(
-    [lat,lon]
-   )
-   .addTo(map)
-   .bindPopup(
-    "📍 Dein Standort"
-   );
-
- }
- else{
-
-  userMarker.setLatLng(
-   [lat,lon]
-  );
-
- }
-
-
- if(!userAccuracy){
-
-  userAccuracy =
-   L.circle(
-    [lat,lon],
-    {
-     radius:accuracy,
-     color:"#31a9ff",
-     fillColor:"#31a9ff",
-     fillOpacity:.12,
-     weight:1
-    }
-   )
-   .addTo(map);
-
- }
- else{
-
-  userAccuracy
-   .setLatLng(
-    [lat,lon]
-   )
-   .setRadius(
-    accuracy
-   );
-
- }
-
-
- document.getElementById(
-  "gpsText"
- ).textContent =
-  `GPS gefunden · ±${Math.round(accuracy)} m`;
-
-
- if(center){
-
-  map.setView(
-   [lat,lon],
-   14
-  );
-
- }
-
-}
-
-
-/* =========================================================
-   ROUTE
-========================================================= */
-
-document.getElementById(
- "quickRoute"
-).onclick =
- startRoute;
-
-
-function startRoute(){
-
- if(
-  !navigator.geolocation
- ){
-
-  alert(
-   "GPS wird benötigt."
-  );
-
-  return;
-
- }
-
-
- if(tracking){
-
-  navigator.geolocation.clearWatch(
-   watchId
-  );
-
-  watchId=null;
-
-  tracking=false;
-
-  document.getElementById(
-   "quickRoute"
-  ).textContent =
-   "🐾 Route";
-
-  return;
-
- }
-
-
- routePoints=[];
- routeDistance=0;
-
-
- if(routeLine){
-
-  map.removeLayer(
-   routeLine
-  );
-
- }
-
-
- routeLine =
-  L.polyline(
-   [],
-   {
-    color:"#ff9b32",
-    weight:5
-   }
-  )
-  .addTo(map);
-
-
- tracking=true;
-
-
- document.getElementById(
-  "quickRoute"
- ).textContent =
-  "■ Stop";
-
-
- watchId =
-  navigator.geolocation.watchPosition(
-
-   position => {
-
-    const point =
-     [
-      position.coords.latitude,
-      position.coords.longitude
-     ];
-
-
-    if(
-     routePoints.length
-    ){
-
-     const previous =
-      routePoints[
-       routePoints.length-1
-      ];
-
-
-     const distance =
-      map.distance(
-       previous,
-       point
-      );
-
-
-     if(distance > 3){
-
-      routeDistance +=
-       distance;
-
-      document.getElementById(
-       "routeStat"
-      ).textContent =
-       formatDistance(
-        routeDistance
-       );
-
-     }
-
-    }
-
-
-    routePoints.push(
-     point
-    );
-
-
-    routeLine.setLatLngs(
-     routePoints
-    );
-
-
-    updateUserPosition(
-     position,
-     false
-    );
-
-   },
-
-   () => {},
-
-   {
-    enableHighAccuracy:true,
-    maximumAge:2000,
-    timeout:15000
-   }
-
-  );
-
-}
-
-
-/* =========================================================
-   WETTER
+WETTER
 ========================================================= */
 
 async function loadWeather(){
 
- if(!currentPosition)
-  return;
+if(!currentPosition)
+return;
 
+const lat =
+currentPosition[0];
 
- const lat =
-  currentPosition[0];
+const lon =
+currentPosition[1];
 
- const lon =
-  currentPosition[1];
+try{
 
+const url =
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&timezone=auto`;
 
- try{
+const response =
+await fetch(url);
 
-  const url =
-   `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&timezone=auto`;
+const data =
+await response.json();
 
+document.getElementById(
+"weatherStat"
+).textContent =
+Math.round(
+data.current.temperature_2m
+)+"°C";
 
-  const response =
-   await fetch(url);
+}
+catch{
 
+document.getElementById(
+"weatherStat"
+).textContent =
+"–";
 
-  const data =
-   await response.json();
-
-
-  document.getElementById(
-   "weatherStat"
-  ).textContent =
-   Math.round(
-    data.current.temperature_2m
-   )+"°C";
-
- }
- catch{
-
-  document.getElementById(
-   "weatherStat"
-  ).textContent =
-   "–";
-
- }
+}
 
 }
 
 
 /* =========================================================
-   SUCHE
+SUCHE
 ========================================================= */
 
 document.getElementById(
- "searchInput"
+"searchInput"
 ).addEventListener(
- "keydown",
- async event => {
+"keydown",
+async event => {
 
-  if(
-   event.key !== "Enter"
-  )
-   return;
+if(event.key !== "Enter")
+return;
 
+const query =
+event.target.value.trim();
 
-  const query =
-   event.target.value.trim();
+if(!query)
+return;
 
+const mushroom =
+species.find(
+item =>
+(
+item.name+" "+item.latin
+)
+.toLowerCase()
+.includes(
+query.toLowerCase()
+)
+);
 
-  if(!query)
-   return;
+if(mushroom){
 
+showSpecies(mushroom.id);
 
-  const mushroom =
-   species.find(
-    item =>
-     (
-      item.name+
-      " "+
-      item.latin
-     )
-     .toLowerCase()
-     .includes(
-      query.toLowerCase()
-     )
-   );
+return;
 
+}
 
-  if(mushroom){
+try{
 
-   showSpecies(
-    mushroom.id
-   );
+const url =
+"https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&addressdetails=1&q="+
+encodeURIComponent(query);
 
-   return;
+const response =
+await fetch(url);
 
-  }
+const data =
+await response.json();
 
+if(data[0]){
 
-  try{
+const lat =
++data[0].lat;
 
-   const url =
-    "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q="+
-    encodeURIComponent(query);
+const lon =
++data[0].lon;
 
+map.setView(
+[lat,lon],
+14
+);
 
-   const response =
-    await fetch(url);
+loadLiveHabitat(
+lat,
+lon,
+false
+);
 
+}
+else{
 
-   const data =
-    await response.json();
+alert("Ort nicht gefunden.");
 
+}
 
-   if(data[0]){
+}
+catch{
 
-    map.setView(
-     [
-      +data[0].lat,
-      +data[0].lon
-     ],
-     14
-    );
+alert(
+"Suche momentan nicht verfügbar."
+);
 
-   }
-   else{
+}
 
-    alert(
-     "Ort nicht gefunden."
-    );
-
-   }
-
-  }
-  catch{
-
-   alert(
-    "Suche momentan nicht verfügbar."
-   );
-
-  }
-
- }
+}
 );
 
 
 /* =========================================================
-   PILZLEXIKON
+PILZLEXIKON
 ========================================================= */
 
 function showSpecies(id){
 
- const mushroom =
-  species.find(
-   item =>
-    item.id === id
-  );
+const mushroom =
+species.find(
+item => item.id === id
+);
 
+if(!mushroom)
+return;
 
- if(!mushroom)
-  return;
+openModal(
+"🍄 "+mushroom.name,
 
+`
+<p>
+<b><i>${esc(mushroom.latin)}</i></b>
+</p>
 
- openModal(
-  "🍄 "+mushroom.name,
+<p>
+<b>🌲 Habitat:</b><br>
+${esc(mushroom.habitat)}
+</p>
 
-  `
-   <p>
-    <b>
-     <i>
-      ${esc(mushroom.latin)}
-     </i>
-    </b>
-   </p>
+<p>
+<b>📅 Saison:</b><br>
+${esc(mushroom.season)}
+</p>
 
-   <p>
-    <b>🌲 Habitat:</b><br>
-    ${esc(mushroom.habitat)}
-   </p>
+<p>
+<b>🔎 Merkmale:</b><br>
+${esc(mushroom.features)}
+</p>
 
-   <p>
-    <b>🌳 Typische Partner:</b><br>
-    ${mushroom.trees
-      .map(
-       tree =>
-        esc(tree)
-      )
-      .join(", ")
-    }
-   </p>
-
-   <p>
-    <b>📅 Saison:</b><br>
-    ${esc(mushroom.season)}
-   </p>
-
-   <p>
-    <b>🔎 Merkmale:</b><br>
-    ${esc(mushroom.features)}
-   </p>
-
-   <p class="danger">
-    <b>⚠️ Wichtig:</b><br>
-    Die App ist nicht für eine sichere
-    Verzehrsentscheidung geeignet.
-   </p>
-  `
- );
+<p class="danger">
+<b>⚠️ Wichtig:</b><br>
+Fotoanalyse und App-Daten sind keine sichere Grundlage
+für den Verzehr eines Pilzes.
+</p>
+`
+);
 
 }
 
 
 function renderSpecies(){
 
- document.getElementById(
-  "speciesGrid"
- ).innerHTML =
+document.getElementById(
+"speciesGrid"
+).innerHTML =
 
- species.map(
-  mushroom => `
+species.map(
+mushroom => `
 
-   <button
-    class="species-card"
-    data-id="${mushroom.id}">
+<button
+class="species-card"
+data-id="${esc(mushroom.id)}">
 
-    <span style="font-size:23px">
-     🍄
-    </span>
+<span style="font-size:24px">
+🍄
+</span>
 
-    <b>
-     ${esc(mushroom.name)}
-    </b>
+<b>${esc(mushroom.name)}</b>
 
-    <small>
-     ${esc(mushroom.latin)}
-    </small>
+<small>${esc(mushroom.latin)}</small>
 
-   </button>
+</button>
 
-  `
- ).join("");
+`
+).join("");
 
+document
+.querySelectorAll(".species-card")
+.forEach(
+button => {
 
- document
-  .querySelectorAll(
-   ".species-card"
-  )
-  .forEach(
-   button => {
-
-    button.onclick =
-     () =>
-      showSpecies(
-       button.dataset.id
-      );
-
-   }
-  );
+button.onclick =
+() =>
+showSpecies(
+button.dataset.id
+);
 
 }
+);
 
+}
 
 renderSpecies();
 
 
 /* =========================================================
-   BOTTOM SHEET
+BOTTOM SHEET
 ========================================================= */
 
 const sheet =
- document.getElementById(
-  "sheet"
- );
-
+document.getElementById("sheet");
 
 document.getElementById(
- "sheetToggle"
+"sheetToggle"
 ).onclick =
- () => {
+() => {
 
-  const expanded =
-   sheet.classList.toggle(
-    "expanded"
-   );
+sheet.classList.toggle("expanded");
 
+document.getElementById(
+"sheetToggle"
+).textContent =
 
-  document.getElementById(
-   "sheetToggle"
-  ).textContent =
-   expanded ? "↓" : "↑";
+sheet.classList.contains("expanded")
+? "↓"
+: "↑";
 
- };
+};
 
 
 /* =========================================================
-   FUNDORT
+FUNDORT
 ========================================================= */
 
 document.getElementById(
- "quickSpot"
+"quickSpot"
 ).onclick =
- () => {
+() => {
 
-  openModal(
-   "📌 Fundort speichern",
+openModal(
+"📌 Fundort speichern",
 
-   `
-    <input
-     class="field"
-     id="spotNameInput"
-     placeholder="Name des Fundorts">
+`
+<input
+class="field"
+id="spotNameInput"
+placeholder="Name des Fundorts">
 
-    <button
-     class="primary"
-     id="saveDemoSpot">
+<button
+class="primary"
+id="saveDemoSpot">
 
-     📍 Aktuellen Standort speichern
+📍 Aktuellen Standort speichern
 
-    </button>
-   `
-  );
+</button>
+`
+);
 
+setTimeout(
+() => {
 
-  setTimeout(
-   () => {
+document.getElementById(
+"saveDemoSpot"
+).onclick =
 
-    document.getElementById(
-     "saveDemoSpot"
-    ).onclick =
-     () => {
+() => {
 
-      if(!currentPosition){
+if(!currentPosition){
 
-       alert(
-        "Bitte zuerst GPS aktivieren."
-       );
+alert(
+"Bitte zuerst GPS aktivieren."
+);
 
-       return;
+return;
 
-      }
+}
 
+const lat =
+currentPosition[0];
 
-      L.marker(
-       currentPosition
-      )
-      .addTo(map)
-      .bindPopup(
-       "📌 Dein gespeicherter Fundort"
-      )
-      .openPopup();
+const lon =
+currentPosition[1];
 
+L.marker(
+[lat,lon]
+)
+.addTo(map)
+.bindPopup(
+"📌 Dein gespeicherter Fundort"
+)
+.openPopup();
 
-      closeModal();
+closeModal();
 
-     };
+};
 
-   },
-   0
-  );
+},
+0
+);
 
- };
+};
 
 
 /* =========================================================
-   KI-FOTO
+KI
 ========================================================= */
 
 document.getElementById(
- "quickAI"
+"quickAI"
 ).onclick =
- () => {
+() => {
 
-  openModal(
-   "📷 KI-Analyse",
+openModal(
+"📷 KI-Analyse",
 
-   `
-    <p>
-     Wähle ein Pilzfoto aus:
-    </p>
+`
+<p>
+Wähle ein Pilzfoto aus:
+</p>
 
-    <input
-     class="field"
-     type="file"
-     accept="image/*"
-     capture="environment">
+<input
+class="field"
+type="file"
+accept="image/*"
+capture="environment">
 
-    <p class="danger">
+<p style="color:#9eafa8;font-size:13px">
 
-     Die Fotoanalyse ist nur zur Orientierung.
-     Sie darf nicht als sichere Bestimmung
-     für den Verzehr verwendet werden.
+Eine Fotoanalyse dient nur zur Orientierung
+und darf niemals als sichere Grundlage für
+den Verzehr eines Pilzes verwendet werden.
 
-    </p>
-   `
-  );
+</p>
+`
+);
 
- };
+};
 
 
 /* =========================================================
-   WALD ANZEIGEN
+WALD SUCHEN
 ========================================================= */
 
 document.getElementById(
- "findForest"
+"findForest"
 ).onclick =
- () => {
+() => {
 
-  if(
-   forestLayer.getLayers().length
-  ){
+const layers =
+forestLayer.getLayers();
 
-   map.fitBounds(
-    forestLayer.getBounds(),
-    {
-     padding:[30,30]
-    }
-   );
+if(layers.length){
 
-  }
+const group =
+L.featureGroup(layers);
 
- };
+map.fitBounds(
+group.getBounds(),
+{
+padding:[30,30]
+}
+);
+
+}
+else{
+
+alert(
+"Im aktuellen Live-Bereich wurden keine Waldflächen gefunden."
+);
+
+}
+
+};
 
 
 /* =========================================================
-   BOTTOM NAV
+BOTTOM NAV
 ========================================================= */
 
 document
- .querySelectorAll(
-  ".bottom-nav button"
- )
- .forEach(
-  button => {
+.querySelectorAll(".bottom-nav button")
+.forEach(
+button => {
 
-   button.addEventListener(
-    "click",
-    () => {
+button.addEventListener(
+"click",
+() => {
 
-     document
-      .querySelectorAll(
-       ".bottom-nav button"
-      )
-      .forEach(
-       item =>
-        item.classList.remove(
-         "active"
-        )
-      );
+document
+.querySelectorAll(".bottom-nav button")
+.forEach(
+item =>
+item.classList.remove("active")
+);
 
+button.classList.add("active");
 
-     button.classList.add(
-      "active"
-     );
+const tab =
+button.dataset.tab;
 
+if(tab === "lexicon"){
 
-     const tab =
-      button.dataset.tab;
+sheet.classList.add("expanded");
 
+document.getElementById(
+"sheetToggle"
+).textContent =
+"↓";
 
-     if(
-      tab === "lexicon"
-     ){
+}
 
-      sheet.classList.add(
-       "expanded"
-      );
+if(tab === "spots"){
 
-      document.getElementById(
-       "sheetToggle"
-      ).textContent =
-       "↓";
+openModal(
+"🍄 Funde",
 
-     }
+`
+<p>
+Hier werden deine gespeicherten
+Fundorte angezeigt.
+</p>
 
+<p class="danger">
+Die Habitat-Daten der App sind keine
+Bestätigung eines Pilzfundes.
+</p>
+`
+);
 
-     if(
-      tab === "spots"
-     ){
+}
 
-      openModal(
-       "🍄 Funde",
+if(tab === "routes"){
 
-       `
-        <p>
-         Hier werden deine gespeicherten
-         Fundorte angezeigt.
-        </p>
+openModal(
+"⌁ Touren",
 
-        <p class="danger">
-         Die Demo-Pilzspots sind keine
-         bestätigten aktuellen Funde.
-        </p>
-       `
-      );
+`
+<p>
+Aktuelle Route:
+<b>${formatDistance(routeDistance)}</b>
+</p>
+`
+);
 
-     }
+}
 
+if(tab === "profile"){
 
-     if(
-      tab === "routes"
-     ){
+openModal(
+"♙ Profil",
 
-      openModal(
-       "⌁ Touren",
+`
+<p>
+<b>PilzMap v3.0</b>
+</p>
 
-       `
-        <p>
-         Aktuelle Route:
-         <b>
-          ${formatDistance(
-           routeDistance
-          )}
-         </b>
-        </p>
-       `
-      );
+<p>
+Naturbeobachtungs-App mit
+Live-Karte, GPS, Habitat-Hinweisen
+und Pilzlexikon.
+</p>
+`
+);
 
-     }
+}
 
+}
+);
 
-     if(
-      tab === "profile"
-     ){
-
-      openModal(
-       "♙ Profil",
-
-       `
-        <p>
-         <b>PilzMap v3.1</b>
-        </p>
-
-        <p>
-         Naturbeobachtungs-App mit
-         Karte, GPS, Habitat-Hinweisen,
-         Pilzspots und Pilzlexikon.
-        </p>
-       `
-      );
-
-     }
-
-    }
-   );
-
-  }
- );
+}
+);
 
 
 /* =========================================================
-   MODAL
+MODAL
 ========================================================= */
 
 document.getElementById(
- "modalClose"
+"modalClose"
 ).onclick =
- closeModal;
-
+closeModal;
 
 document.getElementById(
- "modal"
+"modal"
 ).addEventListener(
- "click",
- event => {
+"click",
+event => {
 
-  if(
-   event.target.id === "modal"
-  ){
+if(event.target.id === "modal"){
 
-   closeModal();
+closeModal();
 
-  }
+}
 
- });
+});
 
 
 /* =========================================================
-   BOTTOM-SHEET SWIPE
+SWIPE BOTTOM SHEET
 ========================================================= */
 
 let touchStartY = null;
 
-
 sheet.addEventListener(
- "touchstart",
- event => {
+"touchstart",
+event => {
 
-  touchStartY =
-   event.touches[0].clientY;
+touchStartY =
+event.touches[0].clientY;
 
- },
- {
-  passive:true
- }
+},
+{
+passive:true
+}
 );
 
-
 sheet.addEventListener(
- "touchend",
- event => {
+"touchend",
+event => {
 
-  if(
-   touchStartY === null
-  )
-   return;
+if(touchStartY === null)
+return;
 
+const difference =
+event.changedTouches[0].clientY -
+touchStartY;
 
-  const difference =
-   event.changedTouches[0].clientY -
-   touchStartY;
+if(difference < -45){
 
+sheet.classList.add("expanded");
 
-  if(
-   difference < -45
-  ){
+document.getElementById(
+"sheetToggle"
+).textContent =
+"↓";
 
-   sheet.classList.add(
-    "expanded"
-   );
+}
 
-   document.getElementById(
-    "sheetToggle"
-   ).textContent =
-    "↓";
+if(difference > 45){
 
-  }
+sheet.classList.remove("expanded");
 
+document.getElementById(
+"sheetToggle"
+).textContent =
+"↑";
 
-  if(
-   difference > 45
-  ){
+}
 
-   sheet.classList.remove(
-    "expanded"
-   );
+touchStartY = null;
 
-   document.getElementById(
-    "sheetToggle"
-   ).textContent =
-    "↑";
-
-  }
-
-
-  touchStartY=null;
-
- },
- {
-  passive:true
- }
+},
+{
+passive:true
+}
 );
 
 
 /* =========================================================
-   START
+TOGGLES
+========================================================= */
+
+document.getElementById(
+"forestRow"
+).addEventListener(
+"click",
+() => {
+
+forestVisible =
+!forestVisible;
+
+setToggle(
+"forestToggle",
+forestVisible
+);
+
+if(currentPosition){
+
+loadLiveHabitat(
+currentPosition[0],
+currentPosition[1],
+false
+);
+
+}
+
+}
+);
+
+
+/* =========================================================
+PILZE TOGGLE
+========================================================= */
+
+document.getElementById(
+"mushRow"
+).addEventListener(
+"click",
+() => {
+
+mushroomVisible =
+!mushroomVisible;
+
+setToggle(
+"mushToggle",
+mushroomVisible
+);
+
+drawMushrooms();
+
+}
+);
+
+
+/* =========================================================
+COMMUNITY
+========================================================= */
+
+document.getElementById(
+"communityRow"
+).addEventListener(
+"click",
+() => {
+
+communityVisible =
+!communityVisible;
+
+setToggle(
+"communityToggle",
+communityVisible
+);
+
+communityLayer.clearLayers();
+
+if(communityVisible){
+
+[
+[53.565,9.955],
+[53.535,10.015],
+[53.615,9.965]
+]
+.forEach(
+p => {
+
+L.circleMarker(
+p,
+{
+radius:7,
+color:"#a66cff",
+fillColor:"#a66cff",
+fillOpacity:.8
+}
+)
+.bindPopup(
+"👥 Community-Spot"
+)
+.addTo(
+communityLayer
+);
+
+}
+);
+
+}
+
+}
+);
+
+
+/* =========================================================
+ZOOM
+========================================================= */
+
+document.getElementById(
+"zoomIn"
+).onclick =
+() => map.zoomIn();
+
+document.getElementById(
+"zoomOut"
+).onclick =
+() => map.zoomOut();
+
+document.getElementById(
+"locBtn"
+).onclick =
+() => locateUser(true);
+
+document.getElementById(
+"gpsTop"
+).onclick =
+() => locateUser(true);
+
+document.getElementById(
+"quickGps"
+).onclick =
+() => locateUser(true);
+
+
+/* =========================================================
+START
 ========================================================= */
 
 setTimeout(
- () => {
+() => {
 
-  if(
-   navigator.geolocation
-  ){
+if(navigator.geolocation){
 
-   navigator.geolocation.getCurrentPosition(
+navigator.geolocation.getCurrentPosition(
 
-    position => {
+pos => {
 
-     updateUserPosition(
-      position,
-      false
-     );
+updateUserPosition(
+pos,
+false
+);
 
-     loadWeather();
+loadWeather();
 
-    },
+loadLiveHabitat(
+pos.coords.latitude,
+pos.coords.longitude,
+false
+);
 
-    () => {
+},
 
-     document.getElementById(
-      "gpsText"
-     ).textContent =
-      "GPS-Standort nicht automatisch verfügbar";
+() => {
 
-    },
+document.getElementById(
+"gpsText"
+).textContent =
+"GPS-Standort nicht automatisch verfügbar";
 
-    {
-     enableHighAccuracy:true,
-     timeout:8000,
-     maximumAge:10000
-    }
+},
 
-   );
+{
+enableHighAccuracy:true,
+timeout:8000,
+maximumAge:10000
+}
 
-  }
+);
 
- },
- 500
+}
+
+},
+500
 );
 
 </script>
