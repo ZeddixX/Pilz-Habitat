@@ -64,6 +64,7 @@ font-size:9px;
 display:none;
 }
 
+
 /* =========================
 TOP BAR
 ========================= */
@@ -143,6 +144,7 @@ border-color:var(--green);
 color:var(--green2);
 }
 
+
 /* =========================
 SEARCH
 ========================= */
@@ -190,8 +192,9 @@ font-size:16px;
 color:#9aaca5;
 }
 
+
 /* =========================
-SIDE MENU
+SEITENMENÜ
 ========================= */
 
 .side-menu{
@@ -288,8 +291,9 @@ transform:translateX(18px);
 background:#062017;
 }
 
+
 /* =========================
-MAP CONTROLS
+KARTEN CONTROLS
 ========================= */
 
 .map-controls{
@@ -332,8 +336,172 @@ background:#18382e;
 font-size:20px;
 }
 
+
 /* =========================
-MUSHROOM MARKERS
+RADIUS MENU
+========================= */
+
+.radius-menu{
+position:absolute;
+z-index:1300;
+
+right:58px;
+top:112px;
+
+width:175px;
+
+background:rgba(6,19,16,.97);
+
+border:1px solid #29443a;
+border-radius:19px;
+
+padding:8px;
+
+box-shadow:0 15px 40px #000b;
+
+opacity:0;
+transform:translateX(8px) scale(.96);
+pointer-events:none;
+
+transition:.16s ease;
+}
+
+.radius-menu.open{
+opacity:1;
+transform:none;
+pointer-events:auto;
+}
+
+.radius-title{
+font-size:11px;
+color:var(--muted);
+text-transform:uppercase;
+letter-spacing:.8px;
+
+padding:6px 8px 8px;
+}
+
+.radius-option{
+width:100%;
+
+padding:10px 12px;
+
+border-radius:12px;
+
+background:#0d211b;
+
+border:1px solid transparent;
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+margin:4px 0;
+
+font-size:14px;
+}
+
+.radius-option:hover{
+background:#153128;
+}
+
+.radius-option.active{
+border-color:var(--green);
+background:#12372b;
+color:var(--green2);
+}
+
+.radius-option .check{
+opacity:0;
+}
+
+.radius-option.active .check{
+opacity:1;
+}
+
+
+/* =========================
+MITTELPUNKT
+========================= */
+
+/*
+Der Mittelpunkt ist NICHT Teil der Leaflet-Karte.
+
+Er liegt fest über der Karte und bleibt dadurch
+immer exakt in der Bildschirmmitte.
+
+Die eigentlichen Koordinaten kommen über:
+map.getCenter()
+*/
+
+.map-center{
+position:absolute;
+
+left:50%;
+top:50%;
+
+transform:translate(-50%,-50%);
+
+z-index:800;
+
+width:34px;
+height:34px;
+
+pointer-events:none;
+
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.center-dot{
+width:12px;
+height:12px;
+
+border-radius:50%;
+
+background:#31a9ff;
+
+border:3px solid #fff;
+
+box-shadow:
+0 0 0 2px rgba(49,169,255,.35),
+0 3px 12px #000b;
+
+position:relative;
+}
+
+.center-dot::before,
+.center-dot::after{
+content:"";
+
+position:absolute;
+
+left:50%;
+top:50%;
+
+transform:translate(-50%,-50%);
+
+border-radius:50%;
+
+border:1px solid rgba(255,255,255,.75);
+}
+
+.center-dot::before{
+width:25px;
+height:25px;
+}
+
+.center-dot::after{
+width:34px;
+height:34px;
+
+border-color:rgba(49,169,255,.45);
+}
+
+
+/* =========================
+MUSHROOM MARKER
 ========================= */
 
 .mush-marker{
@@ -354,14 +522,6 @@ box-shadow:0 6px 20px #0009;
 font-size:27px;
 }
 
-.mush-popup{
-color:#15211c;
-min-width:150px;
-}
-
-.mush-popup b{
-font-size:16px;
-}
 
 /* =========================
 BOTTOM SHEET
@@ -529,6 +689,7 @@ border-color:#9b63ff;
 border-color:#1fa9ff;
 }
 
+
 /* =========================
 DETAILS
 ========================= */
@@ -603,6 +764,7 @@ color:var(--muted);
 color:#ff9b9f!important;
 }
 
+
 /* =========================
 BOTTOM NAV
 ========================= */
@@ -649,6 +811,7 @@ font-size:22px;
 .bottom-nav button.active{
 color:var(--green);
 }
+
 
 /* =========================
 MODAL
@@ -739,6 +902,7 @@ font-weight:800;
 margin-top:7px;
 }
 
+
 /* =========================
 LIVE WALD
 ========================= */
@@ -778,6 +942,7 @@ background:#09251b;
 border:1px solid #6cf0c6;
 box-shadow:0 3px 10px #0008;
 }
+
 
 /* =========================
 DESKTOP
@@ -822,6 +987,16 @@ border-radius:20px 20px 0 0;
 
 <div id="map"></div>
 
+
+<!-- =========================
+FESTER KARTEN-MITTELPUNKT
+========================= -->
+
+<div class="map-center" id="mapCenter">
+<div class="center-dot"></div>
+</div>
+
+
 <header class="topbar">
 
 <div class="logo">🍄</div>
@@ -832,13 +1007,24 @@ border-radius:20px 20px 0 0;
 
 <div class="top-actions">
 
-<button class="icon-btn" id="gpsTop" title="GPS">◎</button>
+<button
+class="icon-btn"
+id="gpsTop"
+title="GPS">
+◎
+</button>
 
-<button class="icon-btn" id="menuBtn" title="Menü">☰</button>
+<button
+class="icon-btn"
+id="menuBtn"
+title="Menü">
+☰
+</button>
 
 </div>
 
 </header>
+
 
 <div class="search">
 
@@ -850,184 +1036,404 @@ placeholder="Ort, Wald oder Pilz suchen…">
 
 </div>
 
-<aside class="side-menu" id="sideMenu">
 
-<div class="menu-title">Kartenansicht</div>
+<aside
+class="side-menu"
+id="sideMenu">
 
-<div class="menu-row" id="mapLayerBtn">
+<div class="menu-title">
+Kartenansicht
+</div>
+
+<div
+class="menu-row"
+id="mapLayerBtn">
 
 <span class="menu-icon">🗺️</span>
 
-<span class="menu-label">Karte</span>
+<span class="menu-label">
+Karte
+</span>
 
 </div>
 
-<div class="menu-row" id="satLayerBtn">
+
+<div
+class="menu-row"
+id="satLayerBtn">
 
 <span class="menu-icon">🛰️</span>
 
-<span class="menu-label">Satellit</span>
+<span class="menu-label">
+Satellit
+</span>
 
-<span class="toggle on" id="satToggle">
+<span
+class="toggle on"
+id="satToggle">
+
 <i></i>
+
 </span>
 
 </div>
 
-<div class="menu-row" id="forestRow">
+
+<div
+class="menu-row"
+id="forestRow">
 
 <span class="menu-icon">🌲</span>
 
-<span class="menu-label">Waldflächen</span>
+<span class="menu-label">
+Waldflächen
+</span>
 
-<span class="toggle on" id="forestToggle">
+<span
+class="toggle on"
+id="forestToggle">
+
 <i></i>
+
 </span>
 
 </div>
 
-<div class="menu-row" id="mushRow">
+
+<div
+class="menu-row"
+id="mushRow">
 
 <span class="menu-icon">🍄</span>
 
-<span class="menu-label">Pilzspots</span>
+<span class="menu-label">
+Pilzspots
+</span>
 
-<span class="toggle on" id="mushToggle">
+<span
+class="toggle on"
+id="mushToggle">
+
 <i></i>
+
 </span>
 
 </div>
 
-<div class="menu-row" id="communityRow">
+
+<div
+class="menu-row"
+id="communityRow">
 
 <span class="menu-icon">👥</span>
 
-<span class="menu-label">Community</span>
+<span class="menu-label">
+Community
+</span>
 
-<span class="toggle" id="communityToggle">
+<span
+class="toggle"
+id="communityToggle">
+
 <i></i>
+
 </span>
 
 </div>
 
 </aside>
 
+
+<!-- =========================
+MAP CONTROLS
+========================= -->
+
 <div class="map-controls">
 
-<button class="map-btn" id="zoomIn">+</button>
+<!-- Radius-Auswahl -->
 
-<button class="map-btn" id="zoomOut">−</button>
+<div
+class="radius-menu"
+id="radiusMenu">
 
-<!-- NEU: Im aktuellen Kartenausschnitt suchen -->
+<div class="radius-title">
+📏 Suchradius
+</div>
+
+
+<button
+class="radius-option active"
+data-radius="50">
+
+50 m
+
+<span class="check">
+✓
+</span>
+
+</button>
+
+
+<button
+class="radius-option"
+data-radius="100">
+
+100 m
+
+<span class="check">
+✓
+</span>
+
+</button>
+
+
+<button
+class="radius-option"
+data-radius="200">
+
+200 m
+
+<span class="check">
+✓
+</span>
+
+</button>
+
+
+<button
+class="radius-option"
+data-radius="300">
+
+300 m
+
+<span class="check">
+✓
+</span>
+
+</button>
+
+
+<button
+class="radius-option"
+data-radius="500">
+
+500 m
+
+<span class="check">
+✓
+</span>
+
+</button>
+
+</div>
+
+
+<button
+class="map-btn"
+id="zoomIn">
++
+</button>
+
+
+<button
+class="map-btn"
+id="zoomOut">
+−
+</button>
+
+
 <button
 class="map-btn"
 id="searchAreaBtn"
 title="Hier suchen">
+
 🔎
+
 </button>
 
-<button class="map-btn" id="locBtn">➤</button>
+
+<button
+class="map-btn"
+id="locBtn">
+
+➤
+
+</button>
 
 </div>
 
-<section class="sheet" id="sheet">
+
+<section
+class="sheet"
+id="sheet">
 
 <div class="handle"></div>
 
+
 <div class="sheet-head">
 
-<div class="sheet-icon">🍄</div>
+<div class="sheet-icon">
+🍄
+</div>
+
 
 <div>
 
 <div class="sheet-title">
+
 Pilzsuche
-<span class="online">● Online</span>
+
+<span class="online">
+● Online
+</span>
+
 </div>
+
 
 <div
 style="color:#93a59d;font-size:13px"
 id="gpsText">
+
 Live-Habitat wird geladen…
-</div>
 
 </div>
 
-<button class="up" id="sheetToggle">↑</button>
+</div>
+
+
+<button
+class="up"
+id="sheetToggle">
+
+↑
+
+</button>
 
 </div>
+
 
 <div class="stats">
 
 <div class="stat">
 
-<div class="big" id="spotCount">0</div>
+<div
+class="big"
+id="spotCount">
+0
+</div>
 
-<div class="small">Waldflächen</div>
+<div class="small">
+Waldflächen
+</div>
 
 </div>
+
 
 <div class="stat">
 
-<div class="big" id="routeStat">0 m</div>
+<div
+class="big"
+id="routeStat">
+0 m
+</div>
 
-<div class="small">Route</div>
+<div class="small">
+Route
+</div>
 
 </div>
+
 
 <div class="stat">
 
-<div class="big" id="weatherStat">–</div>
+<div
+class="big"
+id="weatherStat">
+–
+</div>
 
-<div class="small">Wetter</div>
-
+<div class="small">
+Wetter
 </div>
 
 </div>
+
+</div>
+
 
 <div class="quick-title">
 Schnellzugriff
 </div>
 
+
 <div class="quick">
 
-<button id="quickGps">◎ GPS</button>
+<button id="quickGps">
+◎ GPS
+</button>
 
-<button id="quickRoute">🐾 Route</button>
+<button id="quickRoute">
+🐾 Route
+</button>
 
-<button id="quickSpot">☆ Spot</button>
+<button id="quickSpot">
+☆ Spot
+</button>
 
-<button id="quickAI">📷 KI-Analyse</button>
+<button id="quickAI">
+📷 KI-Analyse
+</button>
 
 </div>
 
-<div class="details" id="details">
+
+<div
+class="details"
+id="details">
+
 
 <div class="detail-card">
 
-<h3>🍄 Pilzlexikon</h3>
+<h3>
+🍄 Pilzlexikon
+</h3>
 
 <p>
 Tippe auf eine Art, um Merkmale und typische Lebensräume zu sehen.
 </p>
 
-<div class="species-grid" id="speciesGrid"></div>
+<div
+class="species-grid"
+id="speciesGrid">
+</div>
 
 </div>
 
+
 <div class="detail-card">
 
-<h3>🌲 Live-Habitat</h3>
+<h3>
+🌲 Live-Habitat
+</h3>
 
 <p id="habitatText">
+
 Tippe auf die Karte oder aktiviere GPS, um die aktuellen
 OpenStreetMap-Habitatdaten in deiner Umgebung zu laden.
+
 </p>
 
-<div id="liveSpecies"></div>
 
-<button class="primary" id="findForest">
+<div id="liveSpecies">
+</div>
+
+
+<button
+class="primary"
+id="findForest">
+
 Waldflächen im Kartenausschnitt anzeigen
+
 </button>
 
 </div>
@@ -1036,57 +1442,86 @@ Waldflächen im Kartenausschnitt anzeigen
 
 </section>
 
+
 <nav class="bottom-nav">
 
-<button class="active" data-tab="map">
+<button
+class="active"
+data-tab="map">
+
 <span>🗺️</span>
 Karte
+
 </button>
+
 
 <button data-tab="lexicon">
+
 <span>📖</span>
 Lexikon
+
 </button>
+
 
 <button data-tab="spots">
+
 <span>🍄</span>
 Funde
+
 </button>
+
 
 <button data-tab="routes">
+
 <span>⌁</span>
 Touren
+
 </button>
 
+
 <button data-tab="profile">
+
 <span>♙</span>
 Profil
+
 </button>
 
 </nav>
 
-<div class="modal" id="modal">
+
+<div
+class="modal"
+id="modal">
 
 <div class="modal-box">
 
 <div class="modal-head">
 
-<h2 id="modalTitle">PilzMap</h2>
+<h2 id="modalTitle">
+PilzMap
+</h2>
 
-<button class="close" id="modalClose">×</button>
+<button
+class="close"
+id="modalClose">
+×
+</button>
 
 </div>
 
-<div id="modalContent"></div>
-
+<div id="modalContent">
 </div>
 
 </div>
+
+</div>
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 "use strict";
+
 
 /* =========================================================
 PILZDATEN
@@ -1162,8 +1597,18 @@ danger:true
 KARTE
 ========================================================= */
 
-const map = L.map("map",{zoomControl:false})
-.setView([53.55,9.99],12);
+const map =
+L.map(
+"map",
+{
+zoomControl:false
+}
+)
+.setView(
+[53.55,9.99],
+12
+);
+
 
 const mapLayer =
 L.tileLayer(
@@ -1174,6 +1619,7 @@ attribution:"© OpenStreetMap"
 }
 );
 
+
 const satelliteLayer =
 L.tileLayer(
 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -1181,7 +1627,8 @@ L.tileLayer(
 maxZoom:19,
 attribution:"Tiles © Esri"
 }
-).addTo(map);
+)
+.addTo(map);
 
 
 /* =========================================================
@@ -1195,11 +1642,20 @@ let communityVisible = false;
 let userMarker = null;
 let userAccuracy = null;
 
-let mushroomLayer = L.layerGroup().addTo(map);
-let forestLayer = L.layerGroup().addTo(map);
-let natureLayer = L.layerGroup().addTo(map);
-let treeLayer = L.layerGroup().addTo(map);
-let communityLayer = L.layerGroup().addTo(map);
+let mushroomLayer =
+L.layerGroup().addTo(map);
+
+let forestLayer =
+L.layerGroup().addTo(map);
+
+let natureLayer =
+L.layerGroup().addTo(map);
+
+let treeLayer =
+L.layerGroup().addTo(map);
+
+let communityLayer =
+L.layerGroup().addTo(map);
 
 let selectionCircle = null;
 let selectionMarker = null;
@@ -1207,6 +1663,7 @@ let selectionMarker = null;
 let routeLine = null;
 let routePoints = [];
 let routeDistance = 0;
+
 let tracking = false;
 let watchId = null;
 
@@ -1216,6 +1673,16 @@ let currentHabitat = null;
 let liveRequestId = 0;
 
 const LIVE_RADIUS = 700;
+
+
+/*
+Ausgewählter Radius für:
+🔎 Hier suchen
+*/
+
+let searchRadius = 50;
+
+let currentSearchMode = "live";
 
 
 /* =========================================================
@@ -1238,33 +1705,47 @@ return String(value ?? "")
 
 function setToggle(id,on){
 
-const el = document.getElementById(id);
+const el =
+document.getElementById(id);
 
 if(!el)return;
 
-el.classList.toggle("on",on);
+el.classList.toggle(
+"on",
+on
+);
 
 }
 
 
 function openModal(title,html){
 
-document.getElementById("modalTitle").textContent = title;
-document.getElementById("modalContent").innerHTML = html;
-document.getElementById("modal").classList.add("open");
+document.getElementById(
+"modalTitle"
+).textContent = title;
+
+document.getElementById(
+"modalContent"
+).innerHTML = html;
+
+document.getElementById(
+"modal"
+).classList.add("open");
 
 }
 
 
 function closeModal(){
 
-document.getElementById("modal").classList.remove("open");
+document.getElementById(
+"modal"
+).classList.remove("open");
 
 }
 
 
 /* =========================================================
-PILZ MARKER
+PILZE
 ========================================================= */
 
 function mushroomIcon(){
@@ -1273,7 +1754,8 @@ return L.divIcon({
 
 className:"",
 
-html:`<div class="mush-marker">🍄</div>`,
+html:
+`<div class="mush-marker">🍄</div>`,
 
 iconSize:[44,44],
 
@@ -1290,7 +1772,9 @@ function drawMushrooms(){
 
 mushroomLayer.clearLayers();
 
-document.getElementById("spotCount").textContent =
+document.getElementById(
+"spotCount"
+).textContent =
 currentHabitat
 ? currentHabitat.forests
 : "0";
@@ -1299,10 +1783,14 @@ currentHabitat
 
 
 /* =========================================================
-LIVE OVERPASS
+OVERPASS
 ========================================================= */
 
-async function queryOverpass(lat,lon,radius=LIVE_RADIUS){
+async function queryOverpass(
+lat,
+lon,
+radius=LIVE_RADIUS
+){
 
 const query = `
 [out:json][timeout:25];
@@ -1330,6 +1818,7 @@ const query = `
 out body geom;
 `;
 
+
 const endpoints = [
 
 "https://overpass-api.de/api/interpreter",
@@ -1340,18 +1829,23 @@ const endpoints = [
 
 ];
 
+
 let lastError = null;
+
 
 for(const endpoint of endpoints){
 
 try{
 
-const controller = new AbortController();
+const controller =
+new AbortController();
 
-const timeout = setTimeout(
+const timeout =
+setTimeout(
 () => controller.abort(),
 28000
 );
+
 
 const response =
 await fetch(
@@ -1359,14 +1853,19 @@ endpoint,
 {
 method:"POST",
 headers:{
-"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+"Content-Type":
+"application/x-www-form-urlencoded;charset=UTF-8"
 },
-body:"data="+encodeURIComponent(query),
+body:
+"data="+
+encodeURIComponent(query),
 signal:controller.signal
 }
 );
 
+
 clearTimeout(timeout);
+
 
 if(!response.ok){
 
@@ -1376,17 +1875,22 @@ throw new Error(
 
 }
 
+
 const data =
 await response.json();
 
+
 if(
 data &&
-Array.isArray(data.elements)
+Array.isArray(
+data.elements
+)
 ){
 
 return data.elements;
 
 }
+
 
 throw new Error(
 "Keine gültigen Daten"
@@ -1401,6 +1905,7 @@ lastError = error;
 }
 
 }
+
 
 throw lastError ||
 new Error(
@@ -1433,7 +1938,7 @@ Number.isFinite(point[1])
 
 
 /* =========================================================
-LIVE LAYER LÖSCHEN
+LAYER LÖSCHEN
 ========================================================= */
 
 function clearLiveLayers(){
@@ -1442,16 +1947,24 @@ forestLayer.clearLayers();
 natureLayer.clearLayers();
 treeLayer.clearLayers();
 
+
 if(selectionCircle){
 
-map.removeLayer(selectionCircle);
+map.removeLayer(
+selectionCircle
+);
+
 selectionCircle = null;
 
 }
 
+
 if(selectionMarker){
 
-map.removeLayer(selectionMarker);
+map.removeLayer(
+selectionMarker
+);
+
 selectionMarker = null;
 
 }
@@ -1460,25 +1973,40 @@ selectionMarker = null;
 
 
 /* =========================================================
-LIVE DATEN ZEICHNEN
+LIVE HABITAT RENDERN
 ========================================================= */
 
-function renderLiveHabitat(elements,lat,lon){
+function renderLiveHabitat(
+elements,
+lat,
+lon,
+radius=LIVE_RADIUS,
+mode="live"
+){
 
 clearLiveLayers();
+
 
 let forestCount = 0;
 let natureCount = 0;
 let treeCount = 0;
 
-const treeTypes = new Set();
+const treeTypes =
+new Set();
 
-elements.forEach(element => {
 
-const tags = element.tags || {};
-const type = element.type;
+elements.forEach(
+element => {
 
-const geometry = elementGeometry(element);
+const tags =
+element.tags || {};
+
+const type =
+element.type;
+
+const geometry =
+elementGeometry(element);
+
 
 if(
 type === "way" &&
@@ -1486,12 +2014,17 @@ geometry &&
 geometry.length >= 3
 ){
 
-const natural = tags.natural || "";
-const landuse = tags.landuse || "";
+const natural =
+tags.natural || "";
+
+const landuse =
+tags.landuse || "";
+
 
 const isForest =
 natural === "wood" ||
 landuse === "forest";
+
 
 const isNature =
 [
@@ -1500,22 +2033,28 @@ const isNature =
 "grassland",
 "wetland",
 "water"
-].includes(natural) ||
+]
+.includes(natural)
+||
 [
 "meadow",
 "orchard"
-].includes(landuse);
+]
+.includes(landuse);
+
 
 if(isForest){
 
 forestCount++;
+
 
 if(forestVisible){
 
 L.polygon(
 geometry,
 {
-className:"habitat-polygon",
+className:
+"habitat-polygon",
 color:"#22e3ad",
 weight:2,
 fillColor:"#17d99d",
@@ -1533,22 +2072,27 @@ tags.leaf_type ||
 )}
 </small>
 `)
-.addTo(forestLayer);
+.addTo(
+forestLayer
+);
 
 }
 
 }
+
 
 else if(isNature){
 
 natureCount++;
+
 
 if(forestVisible){
 
 L.polygon(
 geometry,
 {
-className:"live-nature",
+className:
+"live-nature",
 color:"#6cf0c6",
 weight:1.5,
 fillColor:"#6cf0c6",
@@ -1566,17 +2110,21 @@ tags.landuse ||
 )}
 </small>
 `)
-.addTo(natureLayer);
+.addTo(
+natureLayer
+);
 
 }
 
 }
+
 
 if(
 natural === "tree_row"
 ){
 
 natureCount++;
+
 
 if(forestVisible){
 
@@ -1588,7 +2136,9 @@ weight:3,
 opacity:.65
 }
 )
-.addTo(natureLayer);
+.addTo(
+natureLayer
+);
 
 }
 
@@ -1604,6 +2154,7 @@ tags.natural === "tree"
 
 treeCount++;
 
+
 const treeText =
 [
 tags.species,
@@ -1615,6 +2166,7 @@ tags["name:de"]
 .filter(Boolean)
 .join(" ");
 
+
 if(treeText){
 
 treeTypes.add(
@@ -1623,14 +2175,20 @@ treeText.toLowerCase()
 
 }
 
+
 if(forestVisible){
 
 L.marker(
-[element.lat,element.lon],
+[
+element.lat,
+element.lon
+],
 {
-icon:L.divIcon({
+icon:
+L.divIcon({
 className:"",
-html:`<div class="tree-marker">🌳</div>`,
+html:
+`<div class="tree-marker">🌳</div>`,
 iconSize:[20,20],
 iconAnchor:[10,10]
 })
@@ -1648,7 +2206,9 @@ tags.taxon ||
 )}
 </small>
 `)
-.addTo(treeLayer);
+.addTo(
+treeLayer
+);
 
 }
 
@@ -1657,13 +2217,15 @@ tags.taxon ||
 });
 
 
-/* Auswahlkreis */
+/* =========================================================
+SUCHKREIS
+========================================================= */
 
 selectionCircle =
 L.circle(
 [lat,lon],
 {
-radius:LIVE_RADIUS,
+radius:radius,
 className:"selection-circle",
 color:"#31a9ff",
 fillColor:"#31a9ff",
@@ -1671,7 +2233,8 @@ fillOpacity:.06,
 weight:2,
 dashArray:"8 8"
 }
-).addTo(map);
+)
+.addTo(map);
 
 
 selectionMarker =
@@ -1686,7 +2249,11 @@ fillOpacity:1
 }
 )
 .bindPopup(
-"📍 Live-Habitat · 700 m"
+mode === "search"
+?
+`🔎 Suche · ${radius} m`
+:
+`📍 Live-Habitat · ${radius} m`
 )
 .addTo(map);
 
@@ -1700,6 +2267,7 @@ treeTypes:[...treeTypes]
 
 };
 
+
 document.getElementById(
 "spotCount"
 ).textContent =
@@ -1707,38 +2275,51 @@ forestCount;
 
 
 showHabitatInfo(
-currentHabitat
+currentHabitat,
+radius,
+mode
 );
 
 }
 
 
 /* =========================================================
-HABITAT AUSWERTEN
+HABITAT INFO
 ========================================================= */
 
-function showHabitatInfo(habitat){
+function showHabitatInfo(
+habitat,
+radius=LIVE_RADIUS,
+mode="live"
+){
 
 const text =
-document.getElementById("habitatText");
+document.getElementById(
+"habitatText"
+);
 
 const speciesBox =
-document.getElementById("liveSpecies");
+document.getElementById(
+"liveSpecies"
+);
+
 
 const types =
 habitat.treeTypes.join(" ");
 
+
 let habitatName =
 "Naturbereich";
+
 
 let matching = [];
 
 
-/* Wald */
-
 if(habitat.forests > 0){
 
-habitatName = "🌲 Waldgebiet";
+habitatName =
+"🌲 Waldgebiet";
+
 
 if(
 /birke|betula/.test(types)
@@ -1747,6 +2328,7 @@ if(
 habitatName =
 "🌳 Wald mit Birken-Hinweisen";
 
+
 matching.push(
 species.find(
 x => x.id === "birkenpilz"
@@ -1754,6 +2336,7 @@ x => x.id === "birkenpilz"
 );
 
 }
+
 
 if(
 /fichte|picea|spruce/.test(types)
@@ -1773,6 +2356,7 @@ x => x.id === "fliegenpilz"
 
 }
 
+
 if(
 /buche|fagus|eiche|quercus/.test(types)
 ){
@@ -1785,6 +2369,7 @@ x => x.id === "steinpilz"
 
 }
 
+
 if(
 /kiefer|pinus|tanne|abies/.test(types)
 ){
@@ -1796,6 +2381,7 @@ x => x.id === "marone"
 );
 
 }
+
 
 if(!matching.length){
 
@@ -1820,12 +2406,11 @@ x => x.id === "pfifferling"
 }
 
 
-/* Kein Wald */
-
 else if(habitat.nature > 0){
 
 habitatName =
 "🌿 Offener Naturbereich";
+
 
 matching = [
 
@@ -1837,8 +2422,6 @@ x => x.id === "parasol"
 
 }
 
-
-/* Keine Daten */
 
 else{
 
@@ -1853,9 +2436,12 @@ matching = [];
 matching =
 matching.filter(Boolean);
 
+
 const unique = [];
 
-matching.forEach(item => {
+
+matching.forEach(
+item => {
 
 if(
 !unique.some(
@@ -1870,14 +2456,31 @@ unique.push(item);
 });
 
 
+const modeText =
+mode === "search"
+?
+`🔎 Suchradius: ${radius} m`
+:
+`📍 Live-Bereich: ${radius} m`;
+
+
 text.innerHTML = `
 <b>${esc(habitatName)}</b><br>
+
+<small>
+${modeText}
+</small>
+
+<br>
+
 <small>
 ${habitat.forests} Waldflächen ·
 ${habitat.nature} weitere Naturflächen ·
 ${habitat.trees} erfasste Bäume
 </small>
+
 <br><br>
+
 Die Angaben stammen aus OpenStreetMap und
 zeigen vorhandene Kartendaten. Sie sind kein
 Nachweis dafür, dass ein Pilz tatsächlich dort wächst.
@@ -1893,7 +2496,8 @@ speciesBox.innerHTML = `
 
 <div class="species-grid">
 
-${unique.map(item => `
+${unique.map(
+item => `
 
 <button
 class="species-card"
@@ -1903,29 +2507,38 @@ data-live-species="${esc(item.id)}">
 🍄
 </span>
 
-<b>${esc(item.name)}</b>
+<b>
+${esc(item.name)}
+</b>
 
-<small>${esc(item.latin)}</small>
+<small>
+${esc(item.latin)}
+</small>
 
 </button>
 
-`).join("")}
+`
+).join("")}
 
 </div>
 `;
+
 
 speciesBox
 .querySelectorAll(
 "[data-live-species]"
 )
-.forEach(button => {
+.forEach(
+button => {
 
-button.onclick = () =>
+button.onclick =
+() =>
 showSpecies(
 button.dataset.liveSpecies
 );
 
-});
+}
+);
 
 }
 else{
@@ -1938,7 +2551,7 @@ speciesBox.innerHTML = "";
 
 
 /* =========================================================
-LIVE HABITAT LADEN
+LIVE LADEN
 ========================================================= */
 
 async function loadLiveHabitat(
@@ -1950,10 +2563,16 @@ center=false
 const requestId =
 ++liveRequestId;
 
+
+currentSearchMode =
+"live";
+
+
 document.getElementById(
 "gpsText"
 ).textContent =
 "🌐 Live-Habitat wird geladen…";
+
 
 try{
 
@@ -1964,21 +2583,27 @@ lon,
 LIVE_RADIUS
 );
 
+
 if(
 requestId !== liveRequestId
 )
 return;
 
+
 renderLiveHabitat(
 elements,
 lat,
-lon
+lon,
+LIVE_RADIUS,
+"live"
 );
+
 
 document.getElementById(
 "gpsText"
 ).textContent =
 `Live-Daten · 700 m · ${elements.length} Objekte`;
+
 
 if(center){
 
@@ -1997,18 +2622,22 @@ requestId !== liveRequestId
 )
 return;
 
+
 console.error(error);
+
 
 document.getElementById(
 "gpsText"
 ).textContent =
 "Live-Daten momentan nicht erreichbar";
 
+
 document.getElementById(
 "habitatText"
 ).innerHTML =
 `
 <b>⚠️ Live-Daten konnten nicht geladen werden.</b><br>
+
 <small>
 Bitte kurz warten und erneut GPS aktivieren
 oder auf einen Punkt auf der Karte tippen.
@@ -2021,7 +2650,7 @@ oder auf einen Punkt auf der Karte tippen.
 
 
 /* =========================================================
-KARTENKLICK → LIVE DATEN
+KARTENKLICK
 ========================================================= */
 
 map.on(
@@ -2039,7 +2668,167 @@ false
 
 
 /* =========================================================
-NEU: AKTUELLEN KARTENAUSSCHNITT SUCHEN
+KARTENMITTE
+========================================================= */
+
+/*
+Die Position des Mittelpunktes wird nicht
+per Marker-Koordinate gesetzt.
+
+Der Punkt sitzt fest in der Bildschirmmitte.
+
+Wenn die Karte verschoben wird, verändert sich
+map.getCenter() automatisch.
+
+Genau diese Koordinaten werden später für
+"Hier suchen" verwendet.
+*/
+
+
+map.on(
+"moveend",
+() => {
+
+const center =
+map.getCenter();
+
+
+/*
+Wenn ein Suchkreis vorhanden ist,
+verschieben wir ihn beim Kartenverschieben
+nicht automatisch.
+
+Er bleibt als Ergebnis der letzten Suche
+sichtbar.
+
+*/
+
+document.getElementById(
+"gpsText"
+).setAttribute(
+"data-center",
+`${center.lat},${center.lng}`
+);
+
+}
+);
+
+
+/* =========================================================
+RADIUS MENÜ
+========================================================= */
+
+const radiusMenu =
+document.getElementById(
+"radiusMenu"
+);
+
+
+const radiusOptions =
+document.querySelectorAll(
+".radius-option"
+);
+
+
+function openRadiusMenu(){
+
+radiusMenu.classList.add(
+"open"
+);
+
+}
+
+
+function closeRadiusMenu(){
+
+radiusMenu.classList.remove(
+"open"
+);
+
+}
+
+
+radiusOptions.forEach(
+button => {
+
+button.addEventListener(
+"click",
+event => {
+
+event.stopPropagation();
+
+
+searchRadius =
+Number(
+button.dataset.radius
+);
+
+
+radiusOptions.forEach(
+item =>
+item.classList.remove(
+"active"
+)
+);
+
+
+button.classList.add(
+"active"
+);
+
+
+closeRadiusMenu();
+
+
+searchCurrentMapArea();
+
+}
+);
+
+});
+
+
+/* =========================================================
+HIER SUCHEN
+========================================================= */
+
+document.getElementById(
+"searchAreaBtn"
+).onclick =
+event => {
+
+event.stopPropagation();
+
+
+if(
+radiusMenu.classList.contains(
+"open"
+)
+){
+
+closeRadiusMenu();
+
+}
+else{
+
+openRadiusMenu();
+
+}
+
+};
+
+
+radiusMenu.addEventListener(
+"click",
+event => {
+
+event.stopPropagation();
+
+});
+
+
+/* =========================================================
+SUCHE AN KARTENMITTE
 ========================================================= */
 
 async function searchCurrentMapArea(){
@@ -2049,113 +2838,72 @@ document.getElementById(
 "searchAreaBtn"
 );
 
+
 const center =
 map.getCenter();
 
-const bounds =
-map.getBounds();
 
-button.textContent = "⏳";
+const lat =
+center.lat;
 
-button.disabled = true;
+
+const lon =
+center.lng;
+
+
+const radius =
+searchRadius;
+
+
+currentSearchMode =
+"search";
+
+
+button.textContent =
+"⏳";
+
+
+button.disabled =
+true;
+
 
 document.getElementById(
 "gpsText"
 ).textContent =
-"🔎 Kartenausschnitt wird durchsucht…";
+`🔎 Suche ${radius} m um die Kartenmitte…`;
 
 
 try{
 
 /*
-Breite und Höhe des sichtbaren Bereichs
-in Metern berechnen.
-*/
-
-const north =
-bounds.getNorth();
-
-const south =
-bounds.getSouth();
-
-const east =
-bounds.getEast();
-
-const west =
-bounds.getWest();
-
-const horizontalDistance =
-map.distance(
-[center.lat,west],
-[center.lat,east]
-);
-
-const verticalDistance =
-map.distance(
-[south,center.lng],
-[north,center.lng]
-);
-
-
-/*
-Wir nehmen die größere Hälfte als Radius.
-Damit wird ungefähr der komplette
-sichtbare Kartenausschnitt abgedeckt.
-*/
-
-let radius =
-Math.ceil(
-Math.max(
-horizontalDistance,
-verticalDistance
-) / 2
-);
-
-
-/*
-Sicherheit: nicht zu klein und nicht
-unnötig riesig an Overpass schicken.
-*/
-
-radius =
-Math.min(
-Math.max(radius,100),
-5000
-);
-
-
-/*
-Live-Daten genau rund um die Kartenmitte
-laden.
+Exakt die aktuelle Bildschirmmitte.
 */
 
 const elements =
 await queryOverpass(
-center.lat,
-center.lng,
+lat,
+lon,
 radius
 );
 
 
-/*
-Die Daten auf der Karte darstellen.
-*/
-
 renderLiveHabitat(
 elements,
-center.lat,
-center.lng
+lat,
+lon,
+radius,
+"search"
 );
+
 
 document.getElementById(
 "gpsText"
 ).textContent =
-`🔎 Bereich durchsucht · ${elements.length} Objekte · Radius ${formatDistance(radius)}`;
+`🔎 Kartenmitte · ${elements.length} Objekte · ${radius} m`;
 
 
 /*
-Wenn die Suche erfolgreich war,
-wird die Kartenmitte nicht verändert.
+Die Karte wird NICHT verschoben.
 */
 
 }
@@ -2163,35 +2911,30 @@ catch(error){
 
 console.error(error);
 
+
 document.getElementById(
 "gpsText"
 ).textContent =
 "❌ Bereich konnte nicht geladen werden";
 
+
 alert(
-"Die Suche für den aktuellen Kartenausschnitt ist momentan nicht verfügbar."
+"Die Suche für diesen Bereich ist momentan nicht verfügbar."
 );
 
 }
 finally{
 
-button.textContent = "🔎";
+button.textContent =
+"🔎";
 
-button.disabled = false;
+
+button.disabled =
+false;
 
 }
 
 }
-
-
-/*
-Button aktivieren
-*/
-
-document.getElementById(
-"searchAreaBtn"
-).onclick =
-searchCurrentMapArea;
 
 
 /* =========================================================
@@ -2211,10 +2954,12 @@ return;
 
 }
 
+
 document.getElementById(
 "gpsText"
 ).textContent =
 "GPS wird ermittelt…";
+
 
 navigator.geolocation.getCurrentPosition(
 
@@ -2226,6 +2971,7 @@ center
 );
 
 loadWeather();
+
 
 loadLiveHabitat(
 pos.coords.latitude,
@@ -2255,19 +3001,30 @@ maximumAge:5000
 }
 
 
-function updateUserPosition(pos,center){
+/* =========================================================
+USER POSITION
+========================================================= */
+
+function updateUserPosition(
+pos,
+center
+){
 
 const lat =
 pos.coords.latitude;
 
+
 const lon =
 pos.coords.longitude;
+
 
 const accuracy =
 pos.coords.accuracy;
 
+
 currentPosition =
 [lat,lon];
+
 
 if(!userMarker){
 
@@ -2289,6 +3046,7 @@ userMarker.setLatLng(
 
 }
 
+
 if(!userAccuracy){
 
 userAccuracy =
@@ -2308,15 +3066,21 @@ weight:1
 else{
 
 userAccuracy
-.setLatLng([lat,lon])
-.setRadius(accuracy);
+.setLatLng(
+[lat,lon]
+)
+.setRadius(
+accuracy
+);
 
 }
+
 
 document.getElementById(
 "gpsText"
 ).textContent =
 `GPS-Standort gefunden · ±${Math.round(accuracy)} m`;
+
 
 if(center){
 
@@ -2344,11 +3108,14 @@ function startRoute(){
 
 if(!navigator.geolocation){
 
-alert("GPS wird benötigt.");
+alert(
+"GPS wird benötigt."
+);
 
 return;
 
 }
+
 
 if(tracking){
 
@@ -2368,14 +3135,19 @@ return;
 
 }
 
+
 routePoints=[];
 routeDistance=0;
 
+
 if(routeLine){
 
-map.removeLayer(routeLine);
+map.removeLayer(
+routeLine
+);
 
 }
+
 
 routeLine =
 L.polyline(
@@ -2384,14 +3156,18 @@ L.polyline(
 color:"#ff9b32",
 weight:5
 }
-).addTo(map);
+)
+.addTo(map);
+
 
 tracking=true;
+
 
 document.getElementById(
 "quickRoute"
 ).textContent =
 "■ Stop";
+
 
 watchId =
 navigator.geolocation.watchPosition(
@@ -2404,6 +3180,7 @@ pos.coords.latitude,
 pos.coords.longitude
 ];
 
+
 if(routePoints.length){
 
 const last =
@@ -2411,30 +3188,46 @@ routePoints[
 routePoints.length-1
 ];
 
+
 const distance =
 map.distance(
 last,
 point
 );
 
+
 if(distance > 3){
 
-routeDistance += distance;
+routeDistance +=
+distance;
+
 
 document.getElementById(
 "routeStat"
 ).textContent =
-formatDistance(routeDistance);
+formatDistance(
+routeDistance
+);
 
 }
 
 }
 
-routePoints.push(point);
 
-routeLine.setLatLngs(routePoints);
+routePoints.push(
+point
+);
 
-updateUserPosition(pos,false);
+
+routeLine.setLatLngs(
+routePoints
+);
+
+
+updateUserPosition(
+pos,
+false
+);
 
 },
 
@@ -2451,15 +3244,27 @@ timeout:15000
 }
 
 
-function formatDistance(meters){
+/* =========================================================
+DISTANZ
+========================================================= */
+
+function formatDistance(
+meters
+){
 
 if(meters < 1000){
 
-return Math.round(meters)+" m";
+return Math.round(
+meters
+)+" m";
 
 }
 
-return (meters/1000).toFixed(1)+" km";
+
+return (
+meters/1000
+).toFixed(1)
++" km";
 
 }
 
@@ -2473,22 +3278,28 @@ async function loadWeather(){
 if(!currentPosition)
 return;
 
+
 const lat =
 currentPosition[0];
 
+
 const lon =
 currentPosition[1];
+
 
 try{
 
 const url =
 `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&timezone=auto`;
 
+
 const response =
 await fetch(url);
 
+
 const data =
 await response.json();
+
 
 document.getElementById(
 "weatherStat"
@@ -2511,7 +3322,7 @@ document.getElementById(
 
 
 /* =========================================================
-SUCHE
+TEXT SUCHE
 ========================================================= */
 
 document.getElementById(
@@ -2523,11 +3334,14 @@ async event => {
 if(event.key !== "Enter")
 return;
 
+
 const query =
 event.target.value.trim();
 
+
 if(!query)
 return;
+
 
 const mushroom =
 species.find(
@@ -2541,6 +3355,7 @@ query.toLowerCase()
 )
 );
 
+
 if(mushroom){
 
 showSpecies(
@@ -2551,30 +3366,46 @@ return;
 
 }
 
+
 try{
 
 const url =
 "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&addressdetails=1&q="+
-encodeURIComponent(query);
+encodeURIComponent(
+query
+);
+
 
 const response =
 await fetch(url);
 
+
 const data =
 await response.json();
+
 
 if(data[0]){
 
 const lat =
 +data[0].lat;
 
+
 const lon =
 +data[0].lon;
+
 
 map.setView(
 [lat,lon],
 14
 );
+
+
+/*
+Nach der Ortsuche bleibt die
+neue Position exakt unter dem
+Mittelpunkt-Punkt.
+
+*/
 
 loadLiveHabitat(
 lat,
@@ -2615,15 +3446,19 @@ species.find(
 item => item.id === id
 );
 
+
 if(!mushroom)
 return;
+
 
 openModal(
 "🍄 "+mushroom.name,
 
 `
 <p>
-<b><i>${esc(mushroom.latin)}</i></b>
+<b>
+<i>${esc(mushroom.latin)}</i>
+</b>
 </p>
 
 <p>
@@ -2642,15 +3477,22 @@ ${esc(mushroom.features)}
 </p>
 
 <p class="danger">
+
 <b>⚠️ Wichtig:</b><br>
+
 Fotoanalyse und App-Daten sind keine sichere Grundlage
 für den Verzehr eines Pilzes.
+
 </p>
 `
 );
 
 }
 
+
+/* =========================================================
+LEXIKON
+========================================================= */
 
 function renderSpecies(){
 
@@ -2669,17 +3511,24 @@ data-id="${esc(mushroom.id)}">
 🍄
 </span>
 
-<b>${esc(mushroom.name)}</b>
+<b>
+${esc(mushroom.name)}
+</b>
 
-<small>${esc(mushroom.latin)}</small>
+<small>
+${esc(mushroom.latin)}
+</small>
 
 </button>
 
 `
 ).join("");
 
+
 document
-.querySelectorAll(".species-card")
+.querySelectorAll(
+".species-card"
+)
 .forEach(
 button => {
 
@@ -2694,6 +3543,7 @@ button.dataset.id
 
 }
 
+
 renderSpecies();
 
 
@@ -2702,20 +3552,28 @@ BOTTOM SHEET
 ========================================================= */
 
 const sheet =
-document.getElementById("sheet");
+document.getElementById(
+"sheet"
+);
+
 
 document.getElementById(
 "sheetToggle"
 ).onclick =
 () => {
 
-sheet.classList.toggle("expanded");
+sheet.classList.toggle(
+"expanded"
+);
+
 
 document.getElementById(
 "sheetToggle"
 ).textContent =
 
-sheet.classList.contains("expanded")
+sheet.classList.contains(
+"expanded"
+)
 ? "↓"
 : "↑";
 
@@ -2750,6 +3608,7 @@ id="saveDemoSpot">
 `
 );
 
+
 setTimeout(
 () => {
 
@@ -2769,11 +3628,14 @@ return;
 
 }
 
+
 const lat =
 currentPosition[0];
 
+
 const lon =
 currentPosition[1];
+
 
 L.marker(
 [lat,lon]
@@ -2783,6 +3645,7 @@ L.marker(
 "📌 Dein gespeicherter Fundort"
 )
 .openPopup();
+
 
 closeModal();
 
@@ -2818,7 +3681,8 @@ type="file"
 accept="image/*"
 capture="environment">
 
-<p style="color:#9eafa8;font-size:13px">
+<p
+style="color:#9eafa8;font-size:13px">
 
 Eine Fotoanalyse dient nur zur Orientierung
 und darf niemals als sichere Grundlage für
@@ -2843,10 +3707,14 @@ document.getElementById(
 const layers =
 forestLayer.getLayers();
 
+
 if(layers.length){
 
 const group =
-L.featureGroup(layers);
+L.featureGroup(
+layers
+);
+
 
 map.fitBounds(
 group.getBounds(),
@@ -2859,7 +3727,7 @@ padding:[30,30]
 else{
 
 alert(
-"Im aktuellen Live-Bereich wurden keine Waldflächen gefunden."
+"Im aktuellen Suchbereich wurden keine Waldflächen gefunden."
 );
 
 }
@@ -2872,7 +3740,9 @@ BOTTOM NAV
 ========================================================= */
 
 document
-.querySelectorAll(".bottom-nav button")
+.querySelectorAll(
+".bottom-nav button"
+)
 .forEach(
 button => {
 
@@ -2881,20 +3751,31 @@ button.addEventListener(
 () => {
 
 document
-.querySelectorAll(".bottom-nav button")
+.querySelectorAll(
+".bottom-nav button"
+)
 .forEach(
 item =>
-item.classList.remove("active")
+item.classList.remove(
+"active"
+)
 );
 
-button.classList.add("active");
+
+button.classList.add(
+"active"
+);
+
 
 const tab =
 button.dataset.tab;
 
+
 if(tab === "lexicon"){
 
-sheet.classList.add("expanded");
+sheet.classList.add(
+"expanded"
+);
 
 document.getElementById(
 "sheetToggle"
@@ -2902,6 +3783,7 @@ document.getElementById(
 "↓";
 
 }
+
 
 if(tab === "spots"){
 
@@ -2915,13 +3797,16 @@ Fundorte angezeigt.
 </p>
 
 <p class="danger">
+
 Die Habitat-Daten der App sind keine
 Bestätigung eines Pilzfundes.
+
 </p>
 `
 );
 
 }
+
 
 if(tab === "routes"){
 
@@ -2931,12 +3816,15 @@ openModal(
 `
 <p>
 Aktuelle Route:
-<b>${formatDistance(routeDistance)}</b>
+<b>
+${formatDistance(routeDistance)}
+</b>
 </p>
 `
 );
 
 }
+
 
 if(tab === "profile"){
 
@@ -2974,13 +3862,16 @@ document.getElementById(
 ).onclick =
 closeModal;
 
+
 document.getElementById(
 "modal"
 ).addEventListener(
 "click",
 event => {
 
-if(event.target.id === "modal"){
+if(
+event.target.id === "modal"
+){
 
 closeModal();
 
@@ -2995,6 +3886,7 @@ SWIPE BOTTOM SHEET
 
 let touchStartY = null;
 
+
 sheet.addEventListener(
 "touchstart",
 event => {
@@ -3008,6 +3900,7 @@ passive:true
 }
 );
 
+
 sheet.addEventListener(
 "touchend",
 event => {
@@ -3015,13 +3908,17 @@ event => {
 if(touchStartY === null)
 return;
 
+
 const difference =
 event.changedTouches[0].clientY -
 touchStartY;
 
+
 if(difference < -45){
 
-sheet.classList.add("expanded");
+sheet.classList.add(
+"expanded"
+);
 
 document.getElementById(
 "sheetToggle"
@@ -3030,9 +3927,12 @@ document.getElementById(
 
 }
 
+
 if(difference > 45){
 
-sheet.classList.remove("expanded");
+sheet.classList.remove(
+"expanded"
+);
 
 document.getElementById(
 "sheetToggle"
@@ -3040,6 +3940,7 @@ document.getElementById(
 "↑";
 
 }
+
 
 touchStartY = null;
 
@@ -3051,7 +3952,7 @@ passive:true
 
 
 /* =========================================================
-TOGGLES
+WALD TOGGLE
 ========================================================= */
 
 document.getElementById(
@@ -3063,10 +3964,12 @@ document.getElementById(
 forestVisible =
 !forestVisible;
 
+
 setToggle(
 "forestToggle",
 forestVisible
 );
+
 
 if(currentPosition){
 
@@ -3095,10 +3998,12 @@ document.getElementById(
 mushroomVisible =
 !mushroomVisible;
 
+
 setToggle(
 "mushToggle",
 mushroomVisible
 );
+
 
 drawMushrooms();
 
@@ -3107,10 +4012,11 @@ drawMushrooms();
 
 
 /* =========================================================
-SATELLIT / KARTE
+SATELLIT
 ========================================================= */
 
 let satelliteVisible = true;
+
 
 document.getElementById(
 "satLayerBtn"
@@ -3121,27 +4027,47 @@ document.getElementById(
 satelliteVisible =
 !satelliteVisible;
 
+
 setToggle(
 "satToggle",
 satelliteVisible
 );
 
+
 if(satelliteVisible){
 
-if(map.hasLayer(mapLayer)){
-map.removeLayer(mapLayer);
+if(map.hasLayer(
+mapLayer
+)){
+
+map.removeLayer(
+mapLayer
+);
+
 }
 
-satelliteLayer.addTo(map);
+
+satelliteLayer.addTo(
+map
+);
 
 }
 else{
 
-if(map.hasLayer(satelliteLayer)){
-map.removeLayer(satelliteLayer);
+if(map.hasLayer(
+satelliteLayer
+)){
+
+map.removeLayer(
+satelliteLayer
+);
+
 }
 
-mapLayer.addTo(map);
+
+mapLayer.addTo(
+map
+);
 
 }
 
@@ -3162,12 +4088,15 @@ document.getElementById(
 communityVisible =
 !communityVisible;
 
+
 setToggle(
 "communityToggle",
 communityVisible
 );
 
+
 communityLayer.clearLayers();
+
 
 if(communityVisible){
 
@@ -3214,9 +4143,15 @@ document.getElementById(
 () => {
 
 const menu =
-document.getElementById("sideMenu");
+document.getElementById(
+"sideMenu"
+);
 
-menu.classList.toggle("open");
+
+menu.classList.toggle(
+"open"
+);
+
 
 document.getElementById(
 "menuBtn"
@@ -3234,27 +4169,36 @@ ZOOM
 document.getElementById(
 "zoomIn"
 ).onclick =
-() => map.zoomIn();
+() =>
+map.zoomIn();
+
 
 document.getElementById(
 "zoomOut"
 ).onclick =
-() => map.zoomOut();
+() =>
+map.zoomOut();
+
 
 document.getElementById(
 "locBtn"
 ).onclick =
-() => locateUser(true);
+() =>
+locateUser(true);
+
 
 document.getElementById(
 "gpsTop"
 ).onclick =
-() => locateUser(true);
+() =>
+locateUser(true);
+
 
 document.getElementById(
 "quickGps"
 ).onclick =
-() => locateUser(true);
+() =>
+locateUser(true);
 
 
 /* =========================================================
@@ -3276,6 +4220,7 @@ false
 );
 
 loadWeather();
+
 
 loadLiveHabitat(
 pos.coords.latitude,
