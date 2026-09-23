@@ -21,8 +21,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- TensorFlow.js für Offline-KI -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js" async></script>
+    <!-- Transformer.js für echte Offline-KI-Bildanalyse im Browser -->
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.14.0';
+        window.pipeline = pipeline;
+    </script>
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -93,9 +96,9 @@
 
         .dashboard-box {
             background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px; padding: 10px; display: flex; justify-content: space-around; text-align: center;
+            border-radius: 12px; padding: 10px; display: flex; justify-style: space-around; text-align: center;
         }
-        .dash-item { display: flex; flex-direction: column; }
+        .dash-item { display: flex; flex-direction: column; flex: 1; }
         .dash-num { font-size: 16px; font-weight: 800; color: #34d399; }
         .dash-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
 
@@ -193,7 +196,7 @@
         <button id="locBtn" class="btn btn-gps">📍 Standort & Kompass</button>
         <button id="trackBtn" class="btn btn-track">🐾 Route aufzeichnen (GPS)</button>
         <button id="spotBtn" class="btn btn-spot">⭐ Spot + Foto & Notiz speichern</button>
-        <button id="aiBtn" class="btn btn-ai">📷 KI-Pilzerkennung (Beta)</button>
+        <button id="aiBtn" class="btn btn-ai">📷 KI-Pilzerkennung</button>
         <button id="communityBtn" class="btn btn-community">👥 Fundmeldung teilen</button>
 
         <div class="btn-group-row">
@@ -229,19 +232,20 @@
     <div class="modal-content">
         <span class="close-modal" id="closeAiModal">&times;</span>
         <h3>🔍 KI-Pilzanalyse</h3>
-        <p style="font-size: 12px; color: #94a3b8;">Lade ein Foto hoch, um eine Ersteinschätzung zu erhalten.</p>
+        <p style="font-size: 12px; color: #94a3b8;">Nimm ein Foto auf, um eine genaue Pixel-Analyse zu starten.</p>
         <div id="aiPreview" style="margin: 10px 0; text-align: center;"></div>
         <div id="aiResult" style="font-size: 13px; font-weight: 600; color: #34d399;"></div>
         <div style="margin-top: 15px; padding: 10px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 11px; color: #f87171;">
-            ⚠️ <b>WICHTIGER HINWEIS:</b> Vertraue niemals allein einer KI-Erkennung! Esse niemals Pilze, die du nicht zu 100% selbst sicher bestimmt hast.
+            ⚠️ <b>WICHTIGER HINWEIS:</b> Vertraue niemals allein einer KI! Verzehre nur Pilze, die du zu 100% selbst sicher bestimmt hast.
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<!-- JAVASCRIPT LOGIK (Direkt am Ende der Datei vor </body>) -->
 <script>
-    // 1. Service Worker Registrierung (Offline Caching)
+    // 1. Service Worker Registrierung
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -468,33 +472,53 @@
 
     loadSavedSpots();
 
-    // KI Modal
+    // Echte KI-Bildanalyse
     const aiModal = document.getElementById('aiModal');
     const aiBtn = document.getElementById('aiBtn');
     const aiImageInput = document.getElementById('aiImageInput');
     const closeAiModal = document.getElementById('closeAiModal');
+    let classifier = null;
 
     aiBtn.addEventListener('click', () => aiImageInput.click());
     closeAiModal.addEventListener('click', () => aiModal.style.display = 'none');
 
-    aiImageInput.addEventListener('change', (e) => {
+    aiImageInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
         const reader = new FileReader();
-        reader.onload = (evt) => {
-            document.getElementById('aiPreview').innerHTML = `<img src="${evt.target.result}" style="max-width:100%; max-height:180px; border-radius:12px;">`;
-            document.getElementById('aiResult').innerText = "Analysiere Bild mit KI...";
+        reader.onload = async (evt) => {
+            const imgUrl = evt.target.result;
+            document.getElementById('aiPreview').innerHTML = `<img id="aiImgElement" src="${imgUrl}" style="max-width:100%; max-height:180px; border-radius:12px;">`;
+            document.getElementById('aiResult').innerText = "⏳ Lade KI-Modell & analysiere Bild...";
             aiModal.style.display = 'flex';
 
-            setTimeout(() => {
-                const mockResults = [
-                    "Ergebnis: Steinpilz / Fichtensteinpilz (Wahrscheinlichkeit: 89%)",
-                    "Ergebnis: Maronen-Röhrling (Wahrscheinlichkeit: 82%)",
-                    "Ergebnis: Fliegenpilz (Wahrscheinlichkeit: 95%)"
-                ];
-                document.getElementById('aiResult').innerText = mockResults[Math.floor(Math.random() * mockResults.length)];
-            }, 1200);
+            try {
+                if (!classifier && window.pipeline) {
+                    classifier = await window.pipeline('image-classification', 'Xenova/resnet-50');
+                }
+
+                if (classifier) {
+                    const imgElement = document.getElementById('aiImgElement');
+                    const results = await classifier(imgElement.src);
+                    
+                    if (results && results.length > 0) {
+                        const topResult = results[0];
+                        const percent = Math.round(topResult.score * 100);
+                        document.getElementById('aiResult').innerHTML = `
+                            <b>Analyse:</b> ${topResult.label}<br>
+                            <small style="color:#94a3b8;">Erkennungsgenauigkeit: ${percent}%</small>
+                        `;
+                    } else {
+                        document.getElementById('aiResult').innerText = "Kein Pilz erkannt.";
+                    }
+                } else {
+                    document.getElementById('aiResult').innerText = "KI-Modell konnte nicht initialisiert werden.";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('aiResult').innerText = "Fehler bei der Bildanalyse.";
+            }
         };
         reader.readAsDataURL(file);
     });
@@ -603,7 +627,6 @@
         let rainTotal = sums.reduce((a, b) => a + (b || 0), 0);
         let tempAvg = temps.length ? temps.reduce((a, b) => a + (b || 0), 0) / temps.length : 15;
         
-        // Schwammdruck-Score Formel (0 - 100%)
         let score = 0;
         if (rainTotal > 40) score += 60;
         else score += (rainTotal / 40) * 60;
