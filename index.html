@@ -424,16 +424,6 @@ opacity:1;
 MITTELPUNKT
 ========================= */
 
-/*
-Der Mittelpunkt ist NICHT Teil der Leaflet-Karte.
-
-Er liegt fest über der Karte und bleibt dadurch
-immer exakt in der Bildschirmmitte.
-
-Die eigentlichen Koordinaten kommen über:
-map.getCenter()
-*/
-
 .map-center{
 position:absolute;
 
@@ -497,6 +487,89 @@ width:34px;
 height:34px;
 
 border-color:rgba(49,169,255,.45);
+}
+
+
+/* =========================
+RADIUS GRIFF
+========================= */
+
+.radius-handle-wrapper{
+background:transparent!important;
+border:0!important;
+}
+
+.radius-handle{
+width:38px;
+height:38px;
+
+border-radius:50%;
+
+background:rgba(49,169,255,.95);
+
+border:3px solid #fff;
+
+box-shadow:
+0 4px 15px #000b,
+0 0 0 5px rgba(49,169,255,.25);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:17px;
+
+touch-action:none;
+
+user-select:none;
+-webkit-user-select:none;
+
+cursor:grab;
+
+transition:
+transform .08s ease,
+box-shadow .08s ease;
+}
+
+.radius-handle:active{
+cursor:grabbing;
+
+transform:scale(1.18);
+
+box-shadow:
+0 5px 20px #000c,
+0 0 0 8px rgba(49,169,255,.25);
+}
+
+
+/* =========================
+RADIUS LABEL
+========================= */
+
+.radius-label-wrapper{
+background:transparent!important;
+border:0!important;
+}
+
+.radius-label{
+background:rgba(5,18,15,.94);
+
+border:1px solid #31a9ff;
+
+color:#fff;
+
+padding:7px 11px;
+
+border-radius:999px;
+
+font-size:12px;
+font-weight:750;
+
+white-space:nowrap;
+
+box-shadow:0 5px 18px #0009;
+
+pointer-events:none;
 }
 
 
@@ -1150,8 +1223,6 @@ MAP CONTROLS
 
 <div class="map-controls">
 
-<!-- Radius-Auswahl -->
-
 <div
 class="radius-menu"
 id="radiusMenu">
@@ -1660,6 +1731,15 @@ L.layerGroup().addTo(map);
 let selectionCircle = null;
 let selectionMarker = null;
 
+/*
+NEU:
+Ziehbarer Radius-Griff
+*/
+let radiusHandle = null;
+let radiusLabel = null;
+let radiusDragging = false;
+let lastSearchCenter = null;
+
 let routeLine = null;
 let routePoints = [];
 let routeDistance = 0;
@@ -1676,8 +1756,7 @@ const LIVE_RADIUS = 700;
 
 
 /*
-Ausgewählter Radius für:
-🔎 Hier suchen
+Ausgewählter Radius
 */
 
 let searchRadius = 50;
@@ -1938,6 +2017,390 @@ Number.isFinite(point[1])
 
 
 /* =========================================================
+RADIUS POSITION
+========================================================= */
+
+/*
+Berechnet einen Punkt östlich vom Mittelpunkt.
+
+Dadurch sitzt der Griff immer exakt
+auf dem rechten Rand des Kreises.
+*/
+
+function getRadiusHandlePosition(
+center,
+radius
+){
+
+const earthRadius = 6378137;
+
+const lat =
+center.lat *
+Math.PI / 180;
+
+const lon =
+center.lng *
+Math.PI / 180;
+
+const bearing =
+90 *
+Math.PI / 180;
+
+const angularDistance =
+radius / earthRadius;
+
+const newLat =
+Math.asin(
+Math.sin(lat) *
+Math.cos(angularDistance)
++
+Math.cos(lat) *
+Math.sin(angularDistance) *
+Math.cos(bearing)
+);
+
+const newLon =
+lon +
+Math.atan2(
+Math.sin(bearing) *
+Math.sin(angularDistance) *
+Math.cos(lat),
+Math.cos(angularDistance) -
+Math.sin(lat) *
+Math.sin(newLat)
+);
+
+return [
+newLat * 180 / Math.PI,
+newLon * 180 / Math.PI
+];
+
+}
+
+
+/* =========================================================
+RADIUS LABEL
+========================================================= */
+
+function createRadiusLabel(){
+
+if(radiusLabel){
+
+map.removeLayer(
+radiusLabel
+);
+
+radiusLabel = null;
+
+}
+
+
+if(!lastSearchCenter)
+return;
+
+
+const position =
+getRadiusHandlePosition(
+lastSearchCenter,
+searchRadius
+);
+
+
+radiusLabel =
+L.marker(
+position,
+{
+icon:
+L.divIcon({
+className:"radius-label-wrapper",
+html:
+`<div class="radius-label">
+📏 Suchradius: ${Math.round(searchRadius)} m
+</div>`,
+iconSize:[150,34],
+iconAnchor:[75,17]
+}),
+interactive:false,
+zIndexOffset:900
+}
+)
+.addTo(map);
+
+}
+
+
+/* =========================================================
+RADIUS GRIFF ERSTELLEN
+========================================================= */
+
+function createRadiusHandle(){
+
+if(radiusHandle){
+
+map.removeLayer(
+radiusHandle
+);
+
+radiusHandle = null;
+
+}
+
+
+if(!lastSearchCenter)
+return;
+
+
+const position =
+getRadiusHandlePosition(
+lastSearchCenter,
+searchRadius
+);
+
+
+radiusHandle =
+L.marker(
+position,
+{
+draggable:true,
+icon:
+L.divIcon({
+className:"radius-handle-wrapper",
+html:
+`<div class="radius-handle">
+↔
+</div>`,
+iconSize:[38,38],
+iconAnchor:[19,19]
+}),
+zIndexOffset:1000
+}
+)
+.addTo(map);
+
+
+/*
+Während des Ziehens:
+Kartenbewegung deaktivieren,
+damit der Finger nur den Griff bewegt.
+*/
+
+radiusHandle.on(
+"dragstart",
+() => {
+
+radiusDragging = true;
+
+map.dragging.disable();
+
+if(radiusLabel){
+
+map.removeLayer(
+radiusLabel
+);
+
+radiusLabel = null;
+
+}
+
+const handle =
+radiusHandle
+.getElement()
+?.querySelector(
+".radius-handle"
+);
+
+if(handle){
+
+handle.style.transform =
+"scale(1.18)";
+
+}
+
+}
+);
+
+
+/*
+Radius während des Ziehens live berechnen.
+*/
+
+radiusHandle.on(
+"drag",
+event => {
+
+if(!lastSearchCenter)
+return;
+
+
+const draggedPosition =
+event.target.getLatLng();
+
+
+let newRadius =
+map.distance(
+lastSearchCenter,
+draggedPosition
+);
+
+
+/*
+Begrenzung:
+50–500 Meter
+*/
+
+newRadius =
+Math.max(
+50,
+Math.min(
+500,
+newRadius
+)
+);
+
+
+searchRadius =
+Math.round(
+newRadius
+);
+
+
+/*
+Kreis sofort aktualisieren.
+*/
+
+if(selectionCircle){
+
+selectionCircle.setRadius(
+searchRadius
+);
+
+}
+
+
+/*
+Griff wieder exakt auf den
+berechneten Kreisrand setzen.
+
+So kann man nicht versehentlich
+über 500 m hinausziehen.
+*/
+
+const correctedPosition =
+getRadiusHandlePosition(
+lastSearchCenter,
+searchRadius
+);
+
+event.target.setLatLng(
+correctedPosition
+);
+
+
+/*
+Live-Anzeige im oberen Status.
+*/
+
+document.getElementById(
+"gpsText"
+).textContent =
+`📏 Suchradius: ${searchRadius} m`;
+
+
+/*
+Label direkt aktualisieren.
+*/
+
+createRadiusLabel();
+
+}
+);
+
+
+/*
+Beim Loslassen:
+Karte wieder aktivieren und
+neue Suche starten.
+*/
+
+radiusHandle.on(
+"dragend",
+async event => {
+
+radiusDragging = false;
+
+map.dragging.enable();
+
+
+const correctedPosition =
+getRadiusHandlePosition(
+lastSearchCenter,
+searchRadius
+);
+
+radiusHandle.setLatLng(
+correctedPosition
+);
+
+
+if(selectionCircle){
+
+selectionCircle.setRadius(
+searchRadius
+);
+
+}
+
+
+updateRadiusButtons();
+
+
+createRadiusLabel();
+
+
+/*
+Neue Suche automatisch starten.
+*/
+
+await searchCurrentMapArea(
+true
+);
+
+}
+);
+
+}
+
+
+/* =========================================================
+RADIUS BUTTONS AKTUALISIEREN
+========================================================= */
+
+function updateRadiusButtons(){
+
+document
+.querySelectorAll(
+".radius-option"
+)
+.forEach(
+button => {
+
+const value =
+Number(
+button.dataset.radius
+);
+
+button.classList.toggle(
+"active",
+value === searchRadius
+);
+
+}
+);
+
+}
+
+
+/* =========================================================
 LAYER LÖSCHEN
 ========================================================= */
 
@@ -1966,6 +2429,28 @@ selectionMarker
 );
 
 selectionMarker = null;
+
+}
+
+
+if(radiusHandle){
+
+map.removeLayer(
+radiusHandle
+);
+
+radiusHandle = null;
+
+}
+
+
+if(radiusLabel){
+
+map.removeLayer(
+radiusLabel
+);
+
+radiusLabel = null;
 
 }
 
@@ -2221,6 +2706,13 @@ treeLayer
 SUCHKREIS
 ========================================================= */
 
+lastSearchCenter =
+L.latLng(
+lat,
+lon
+);
+
+
 selectionCircle =
 L.circle(
 [lat,lon],
@@ -2256,6 +2748,23 @@ mode === "search"
 `📍 Live-Habitat · ${radius} m`
 )
 .addTo(map);
+
+
+/*
+Der Ziehgriff wird nur für eine
+aktive Bereichssuche angezeigt.
+
+Bei Live-Habitat kann der Nutzer
+weiterhin normal die Karte benutzen.
+*/
+
+if(mode === "search"){
+
+createRadiusHandle();
+
+createRadiusLabel();
+
+}
 
 
 currentHabitat = {
@@ -2657,6 +3166,9 @@ map.on(
 "click",
 event => {
 
+if(radiusDragging)
+return;
+
 loadLiveHabitat(
 event.latlng.lat,
 event.latlng.lng,
@@ -2671,20 +3183,6 @@ false
 KARTENMITTE
 ========================================================= */
 
-/*
-Die Position des Mittelpunktes wird nicht
-per Marker-Koordinate gesetzt.
-
-Der Punkt sitzt fest in der Bildschirmmitte.
-
-Wenn die Karte verschoben wird, verändert sich
-map.getCenter() automatisch.
-
-Genau diese Koordinaten werden später für
-"Hier suchen" verwendet.
-*/
-
-
 map.on(
 "moveend",
 () => {
@@ -2692,16 +3190,6 @@ map.on(
 const center =
 map.getCenter();
 
-
-/*
-Wenn ein Suchkreis vorhanden ist,
-verschieben wir ihn beim Kartenverschieben
-nicht automatisch.
-
-Er bleibt als Ergebnis der letzten Suche
-sichtbar.
-
-*/
 
 document.getElementById(
 "gpsText"
@@ -2764,18 +3252,7 @@ button.dataset.radius
 );
 
 
-radiusOptions.forEach(
-item =>
-item.classList.remove(
-"active"
-)
-);
-
-
-button.classList.add(
-"active"
-);
-
+updateRadiusButtons();
 
 closeRadiusMenu();
 
@@ -2831,7 +3308,9 @@ event.stopPropagation();
 SUCHE AN KARTENMITTE
 ========================================================= */
 
-async function searchCurrentMapArea(){
+async function searchCurrentMapArea(
+fromRadiusDrag=false
+){
 
 const button =
 document.getElementById(
@@ -2859,12 +3338,15 @@ currentSearchMode =
 "search";
 
 
+if(!fromRadiusDrag){
+
 button.textContent =
 "⏳";
 
-
 button.disabled =
 true;
+
+}
 
 
 document.getElementById(
@@ -2875,10 +3357,6 @@ document.getElementById(
 
 try{
 
-/*
-Exakt die aktuelle Bildschirmmitte.
-*/
-
 const elements =
 await queryOverpass(
 lat,
@@ -2886,6 +3364,12 @@ lon,
 radius
 );
 
+
+/*
+Wichtig:
+Nur die aktuellste Suche darf
+die Karte verändern.
+*/
 
 renderLiveHabitat(
 elements,
@@ -2902,10 +3386,6 @@ document.getElementById(
 `🔎 Kartenmitte · ${elements.length} Objekte · ${radius} m`;
 
 
-/*
-Die Karte wird NICHT verschoben.
-*/
-
 }
 catch(error){
 
@@ -2918,19 +3398,26 @@ document.getElementById(
 "❌ Bereich konnte nicht geladen werden";
 
 
+if(!fromRadiusDrag){
+
 alert(
 "Die Suche für diesen Bereich ist momentan nicht verfügbar."
 );
 
 }
+
+}
 finally{
+
+if(!fromRadiusDrag){
 
 button.textContent =
 "🔎";
 
-
 button.disabled =
 false;
+
+}
 
 }
 
@@ -3399,13 +3886,6 @@ map.setView(
 14
 );
 
-
-/*
-Nach der Ortsuche bleibt die
-neue Position exakt unter dem
-Mittelpunkt-Punkt.
-
-*/
 
 loadLiveHabitat(
 lat,
