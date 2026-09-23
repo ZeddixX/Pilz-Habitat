@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilz-Habitat-Finder Pro Master</title>
+    <title>Pilzmap – Dein Fund- & Habitat-Finder</title>
     
-    <!-- PWA Integration -->
+    <!-- PWA / Mobile Integration -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#090d16">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,9 +21,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- TensorFlow.js für Offline-KI -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js" async></script>
-
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
@@ -33,13 +30,14 @@
         }
         #map { height: 100vh; width: 100vw; z-index: 1; background: #090d16; }
         
+        /* Dark Screen UI Card */
         .app-card { 
             position: absolute; top: 16px; left: 16px; z-index: 1000; 
             width: calc(100% - 32px); max-width: 410px; 
-            background: rgba(15, 23, 42, 0.94); 
+            background: rgba(15, 23, 42, 0.95); 
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
             border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 16px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 88vh; overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-height: 88vh; overflow-y: auto;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -64,7 +62,7 @@
         
         select.input-field { 
             appearance: none; 
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2094a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
             background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; 
             padding-right: 36px; font-weight: 600; color: #f1f5f9;
         }
@@ -127,7 +125,7 @@
         .badge-soil { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
         .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         
-        /* Neuer Reiter für Hinzugefügte Pilze */
+        /* Hinzugefügte Funde Sektion */
         .saved-mushrooms-section {
             background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px; padding: 10px; margin-top: 4px;
@@ -158,19 +156,20 @@
         .custom-spot-icon { background: transparent; border: none; font-size: 20px; text-align: center; }
         .user-heading-icon { font-size: 24px; text-shadow: 0 0 10px rgba(52,211,153,0.8); }
 
+        /* Leaflet Dark Popup */
         .leaflet-popup-content-wrapper { 
-            background: rgba(15, 23, 42, 0.95) !important; color: #f8fafc !important;
+            background: rgba(15, 23, 42, 0.96) !important; color: #f8fafc !important;
             border-radius: 16px !important; padding: 4px !important; 
             border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px);
         }
-        .leaflet-popup-tip { background: rgba(15, 23, 42, 0.95) !important; }
+        .leaflet-popup-tip { background: rgba(15, 23, 42, 0.96) !important; }
         .weather-popup h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #f1f5f9; }
         .score-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin: 6px 0; }
         .score-bar-fill { height: 100%; background: linear-gradient(90deg, #f87171, #fbbf24, #34d399); transition: width 0.5s ease; }
 
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
             align-items: center; justify-content: center; padding: 20px;
         }
         .modal-content {
@@ -186,7 +185,7 @@
 
 <div class="app-card" id="appCard">
     <div class="app-header" id="headerToggle">
-        <h1 class="app-title">🌲 Habitat Finder Pro Master</h1>
+        <h1 class="app-title">🍄 Pilzmap</h1>
         <button class="toggle-btn" id="toggleIcon">▲</button>
     </div>
 
@@ -203,35 +202,33 @@
             📅 <b>Saison-Aktivität:</b> Lade Monatsübersicht...
         </div>
 
-        <!-- Neuer Reiter: Hinzugefügte Pilze / Funde Liste -->
+        <!-- Hinzugefügte Funde -->
         <div class="saved-mushrooms-section">
             <div class="saved-mushrooms-header" id="savedListToggle">
-                <span>🍄 Hinzugefügte Pilze (<span id="savedCountTitle">0</span>)</span>
+                <span>🌲 Meine Funde & Spots (<span id="savedCountTitle">0</span>)</span>
                 <span>▼</span>
             </div>
-            <div class="saved-mushrooms-list" id="savedMushroomsContainer">
-                <!-- Wird dynamisch befüllt -->
-            </div>
+            <div class="saved-mushrooms-list" id="savedMushroomsContainer"></div>
         </div>
 
-        <!-- Schnellfilter Norddeutschland -->
+        <!-- Regionen Schnellwahl -->
         <div class="quick-region-group">
             <div class="chip" onclick="flyToRegion(53.55, 10.35, 12, 'Sachsenwald')">🌲 Sachsenwald</div>
             <div class="chip" onclick="flyToRegion(53.25, 9.95, 11, 'Lüneburger Heide')">🌾 Lüneburger Heide</div>
-            <div class="chip" onclick="flyToRegion(54.15, 10.60, 11, 'Holsteinische Schweiz')">🏞️ Holstein. Schweiz</div>
+            <div class="chip" onclick="flyToRegion(53.70, 9.68, 11, 'Elmshorn / Kreis Pinneberg')">🌿 Elmshorn</div>
             <div class="chip" onclick="flyToRegion(51.80, 10.60, 11, 'Harz')">⛰️ Harz</div>
         </div>
 
         <div class="search-group">
-            <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
+            <input type="text" id="citySearch" class="input-field" placeholder="Ort, Wald oder Stadt suchen...">
             <button id="searchBtn" class="btn btn-primary">Suchen</button>
         </div>
 
-        <button id="locBtn" class="btn btn-gps">📍 Standort & Kompass</button>
+        <button id="locBtn" class="btn btn-gps">📍 GPS-Standort & Kompass</button>
         <button id="trackBtn" class="btn btn-track">🐾 Route aufzeichnen (GPS)</button>
         <button id="spotBtn" class="btn btn-spot">⭐ Spot + Foto & Notiz speichern</button>
         <button id="aiBtn" class="btn btn-ai">📷 KI-Pilzerkennung (Beta)</button>
-        <button id="communityBtn" class="btn btn-community">👥 Fundmeldung teilen</button>
+        <button id="communityBtn" class="btn btn-community">👥 Anonyme Fundmeldung teilen</button>
 
         <div class="btn-group-row">
             <button id="exportBtn" class="btn btn-secondary">📤 Export</button>
@@ -243,7 +240,7 @@
         </div>
 
         <select id="pilzSelect" class="input-field" style="width: 100%;">
-            <option value="">-- Pilzart auswählen --</option>
+            <option value="">-- Pilzart für Habitat-Suche wählen --</option>
             <option value="steinpilz">🍄 Steinpilz</option>
             <option value="marone">🌲 Maronen-Röhrling</option>
             <option value="fliegenpilz">🍄 Fliegenpilz (Zeigerpilz)</option>
@@ -253,7 +250,7 @@
         </select>
 
         <div id="habitatInfo" class="info-card"></div>
-        <div id="status">Suche einen Ort oder wähle eine Pilzart.</div>
+        <div id="status">Wähle eine Pilzart oder suche einen Ort.</div>
     </div>
 </div>
 
@@ -278,13 +275,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // 1. Service Worker Registrierung (Offline Caching)
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
-        });
-    }
-
     // Header Toggle
     const headerToggle = document.getElementById('headerToggle');
     const menuContent = document.getElementById('menuContent');
@@ -297,7 +287,7 @@
         toggleIcon.innerText = isCollapsed ? '▼' : '▲';
     });
 
-    // Toggle für die Liste der hinzugefügten Pilze
+    // Toggle Funde-Liste
     const savedListToggle = document.getElementById('savedListToggle');
     const savedMushroomsContainer = document.getElementById('savedMushroomsContainer');
     let listCollapsed = false;
@@ -307,7 +297,7 @@
         savedListToggle.querySelector('span:last-child').innerText = listCollapsed ? '▲' : '▼';
     });
 
-    // Leaflet Layers
+    // Leaflet Kartenebenen (Dark Theme kompatibel)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
     const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
 
@@ -341,7 +331,7 @@
     let trackPath = [];
     let polylineLayer = L.polyline([], { color: '#ea580c', weight: 4, dashArray: '6, 8' }).addTo(map);
 
-    // Habitat-Datenbank
+    // Habitat-Datenbank für Pilze
     const HABITAT_DATA = {
         steinpilz: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Buchen, Eichen, Kiefern', zeiger: 'Fliegenpilz, Heidelbeersträucher', boden: 'Saurer Boden', gefahr: '⚠️ Gallenröhrling' },
         marone: { tag: '["leaf_type"="needleleaved"]', baeume: 'Fichten, Kiefern', zeiger: 'Dichte Moospolster', boden: 'Saurer Nadelwaldboden', gefahr: '⚠️ Gallenröhrling' },
@@ -351,13 +341,11 @@
         parasol: { tag: '', baeume: 'Mischwaldränder', zeiger: 'Waldgräser', boden: 'Humusreich', gefahr: '⚠️ Gift-Riesenschirmling' }
     };
 
-    // Schnell-Navigation für Regionen
     window.flyToRegion = function(lat, lng, zoom, name) {
         map.flyTo([lat, lng], zoom, { duration: 1.5 });
         document.getElementById('status').innerText = `Region angeflogen: ${name}`;
     };
 
-    // Saison-Update
     function updateSeasonInfo() {
         const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
         const now = new Date();
@@ -370,7 +358,7 @@
         } else if (curM >= 5 && curM <= 7) {
             text = `🟡 <b>Frühsaison (${monthNames[curM]}):</b> Pfifferlinge & Sommersteinpilze möglich.`;
         } else {
-            text = `❄️ <b>Nebensaison (${monthNames[curM]}):</b> Ausschau halten nach Austernseitlingen & Samtfußrüblingen.`;
+            text = `❄️ <b>Nebensaison (${monthNames[curM]}):</b> Ausschau halten nach Austernseitlingen.`;
         }
         document.getElementById('seasonNotice').innerHTML = `📅 ${text}`;
     }
@@ -385,9 +373,8 @@
         return R * c;
     }
 
-    // Statistik-Anzeige aktualisieren
     function updateStats() {
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
+        const saved = JSON.parse(localStorage.getItem('pilzmap_spots') || '[]');
         document.getElementById('statSpots').innerText = saved.length;
         document.getElementById('savedCountTitle').innerText = saved.length;
         
@@ -398,17 +385,17 @@
         document.getElementById('statKm').innerText = totalKm.toFixed(1);
     }
 
-    // Spots mit Notizen & Fotos
+    // Spot speichern mit Foto & Notiz
     let pendingSpotCoords = null;
     const spotImageInput = document.getElementById('spotImageInput');
 
     document.getElementById('spotBtn').addEventListener('click', () => {
         pendingSpotCoords = map.getCenter();
-        const spotName = prompt("Name/Pilzart für diesen Spot:", "Steinpilze");
+        const spotName = prompt("Name oder Pilzart für diesen Spot:", "Steinpilze");
         if (!spotName) return;
-        const note = prompt("Notiz hinzufügen:", "Unter der großen Fichte gefunden");
+        const note = prompt("Notiz hinzufügen:", "Unter großen Fichten");
         
-        if (confirm("Möchtest du ein Foto anfügen?")) {
+        if (confirm("Möchtest du ein Foto deines Fundes hinzufügen?")) {
             spotImageInput.dataset.name = spotName;
             spotImageInput.dataset.note = note || '';
             spotImageInput.click();
@@ -431,7 +418,7 @@
     });
 
     function saveSpot(name, note, imgData) {
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
+        const saved = JSON.parse(localStorage.getItem('pilzmap_spots') || '[]');
         saved.push({
             lat: pendingSpotCoords.lat,
             lng: pendingSpotCoords.lng,
@@ -440,24 +427,23 @@
             img: imgData,
             date: new Date().toLocaleDateString('de-DE')
         });
-        localStorage.setItem('pilz_spots', JSON.stringify(saved));
+        localStorage.setItem('pilzmap_spots', JSON.stringify(saved));
         loadSavedSpots();
-        document.getElementById('status').innerText = "Fundort gespeichert!";
+        document.getElementById('status').innerText = "Fundort auf Pilzmap gespeichert!";
     }
 
     function loadSavedSpots() {
         spotLayer.clearLayers();
         savedMushroomsContainer.innerHTML = '';
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
+        const saved = JSON.parse(localStorage.getItem('pilzmap_spots') || '[]');
 
         if (saved.length === 0) {
-            savedMushroomsContainer.innerHTML = `<div style="font-size:11px; color:#94a3b8; text-align:center; padding:6px;">Noch keine Pilze gespeichert.</div>`;
+            savedMushroomsContainer.innerHTML = `<div style="font-size:11px; color:#94a3b8; text-align:center; padding:6px;">Noch keine Spots gespeichert.</div>`;
         }
 
         saved.forEach((spot, index) => {
-            // Marker auf Karte
             const marker = L.marker([spot.lat, spot.lng], {
-                icon: L.divIcon({ className: 'custom-spot-icon', html: '⭐', iconSize: [24, 24] })
+                icon: L.divIcon({ className: 'custom-spot-icon', html: '🍄', iconSize: [24, 24] })
             }).addTo(spotLayer);
 
             const shareUrl = `https://maps.google.com/?q=${spot.lat},${spot.lng}`;
@@ -465,7 +451,7 @@
 
             marker.bindPopup(`
                 <div style="padding:4px; color:#f8fafc; max-width:200px;">
-                    <b>⭐ ${spot.name || 'Fundort'}</b><br>
+                    <b>🍄 ${spot.name || 'Fundort'}</b><br>
                     <small style="color:#94a3b8;">${spot.date}</small>
                     ${spot.note ? `<p style="font-size:11px; margin:4px 0; color:#cbd5e1;">${spot.note}</p>` : ''}
                     ${imgHtml}
@@ -476,12 +462,11 @@
                 </div>
             `);
 
-            // Eintrag in der Menü-Liste ("Hinzugefügte Pilze")
             const itemEl = document.createElement('div');
             itemEl.className = 'saved-mushroom-item';
             itemEl.innerHTML = `
                 <div class="saved-mushroom-info">
-                    <span class="saved-mushroom-title">⭐ ${spot.name || 'Fundort'}</span>
+                    <span class="saved-mushroom-title">🍄 ${spot.name || 'Fundort'}</span>
                     <span class="saved-mushroom-sub">${spot.date} ${spot.note ? '• ' + spot.note : ''}</span>
                 </div>
                 <div class="saved-mushroom-actions">
@@ -500,19 +485,19 @@
     };
 
     window.deleteSpot = function(index) {
-        let saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
+        let saved = JSON.parse(localStorage.getItem('pilzmap_spots') || '[]');
         saved.splice(index, 1);
-        localStorage.setItem('pilz_spots', JSON.stringify(saved));
+        localStorage.setItem('pilzmap_spots', JSON.stringify(saved));
         loadSavedSpots();
     };
 
     // Export & Import
     document.getElementById('exportBtn').addEventListener('click', () => {
-        const saved = localStorage.getItem('pilz_spots') || '[]';
+        const saved = localStorage.getItem('pilzmap_spots') || '[]';
         const blob = new Blob([saved], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `pilz_fundorte_${new Date().toISOString().slice(0,10)}.json`;
+        a.download = `pilzmap_spots_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
     });
 
@@ -525,9 +510,9 @@
             try {
                 const data = JSON.parse(evt.target.result);
                 if (Array.isArray(data)) {
-                    localStorage.setItem('pilz_spots', JSON.stringify(data));
+                    localStorage.setItem('pilzmap_spots', JSON.stringify(data));
                     loadSavedSpots();
-                    document.getElementById('status').innerText = "Fundorte importiert!";
+                    document.getElementById('status').innerText = "Spots erfolgreich importiert!";
                 }
             } catch { document.getElementById('status').innerText = "Fehlerhafte Datei!"; }
         };
@@ -538,12 +523,12 @@
         trackPath = [];
         polylineLayer.setLatLngs([]);
         updateStats();
-        document.getElementById('status').innerText = "GPS-Pfad gelöscht.";
+        document.getElementById('status').innerText = "GPS-Track gelöscht.";
     });
 
     loadSavedSpots();
 
-    // KI Modal
+    // KI Modal Simulation
     const aiModal = document.getElementById('aiModal');
     const aiBtn = document.getElementById('aiBtn');
     const aiImageInput = document.getElementById('aiImageInput');
@@ -559,14 +544,14 @@
         const reader = new FileReader();
         reader.onload = (evt) => {
             document.getElementById('aiPreview').innerHTML = `<img src="${evt.target.result}" style="max-width:100%; max-height:180px; border-radius:12px;">`;
-            document.getElementById('aiResult').innerText = "Analysiere Bild mit KI...";
+            document.getElementById('aiResult').innerText = "Analysiere Pilz mit KI...";
             aiModal.style.display = 'flex';
 
             setTimeout(() => {
                 const mockResults = [
-                    "Ergebnis: Steinpilz / Fichtensteinpilz (Wahrscheinlichkeit: 89%)",
-                    "Ergebnis: Maronen-Röhrling (Wahrscheinlichkeit: 82%)",
-                    "Ergebnis: Fliegenpilz (Wahrscheinlichkeit: 95%)"
+                    "Ergebnis: Steinpilz (Wahrscheinlichkeit: 91%)",
+                    "Ergebnis: Maronen-Röhrling (Wahrscheinlichkeit: 86%)",
+                    "Ergebnis: Echter Pfifferling (Wahrscheinlichkeit: 88%)"
                 ];
                 document.getElementById('aiResult').innerText = mockResults[Math.floor(Math.random() * mockResults.length)];
             }, 1200);
@@ -574,10 +559,10 @@
         reader.readAsDataURL(file);
     });
 
-    // Anonyme Community-Meldungen
+    // Community Fundmeldungen
     document.getElementById('communityBtn').addEventListener('click', () => {
         const center = map.getCenter();
-        const pilzName = prompt("Welche Pilzart hast du in dieser Region entdeckt?", "Steinpilz");
+        const pilzName = prompt("Welche Pilzart wurde hier gesichtet?", "Steinpilz");
         if (!pilzName) return;
 
         const latOffset = (Math.random() - 0.5) * 0.02;
@@ -587,16 +572,16 @@
             color: '#0d9488', fillColor: '#14b8a6', fillOpacity: 0.4, radius: 800
         }).addTo(communityLayer).bindPopup(`
             <div style="padding:4px; font-size:12px;">
-                <b>👥 Anonyme Fundmeldung</b><br>
+                <b>👥 Pilzmap Community-Meldung</b><br>
                 Fund: ${pilzName}<br>
-                <small style="color:#94a3b8;">Saison in dieser Region aktiv!</small>
+                <small style="color:#94a3b8;">Hohe Aktivität in diesem Gebiet!</small>
             </div>
         `);
 
-        document.getElementById('status').innerText = "Anonyme Fundmeldung geteilt!";
+        document.getElementById('status').innerText = "Fundmeldung anonym geteilt!";
     });
 
-    // Ortssuche & GPS
+    // Ortssuche via Nominatim
     async function searchCity() {
         const query = document.getElementById('citySearch').value.trim();
         if (!query) return;
@@ -614,6 +599,7 @@
 
     document.getElementById('searchBtn').addEventListener('click', searchCity);
 
+    // GPS Kompass & Standort
     document.getElementById('locBtn').addEventListener('click', () => {
         if (!navigator.geolocation) { document.getElementById('status').innerText = "GPS nicht verfügbar."; return; }
         navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -627,8 +613,8 @@
                 iconSize: [30, 30], iconAnchor: [15, 15]
             });
 
-            userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standpunkt</b>`).openPopup();
-            document.getElementById('status').innerText = "Standort lokalisiert.";
+            userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standort</b>`).openPopup();
+            document.getElementById('status').innerText = "GPS-Standort ermittelt.";
 
             if (window.DeviceOrientationEvent) {
                 window.addEventListener('deviceorientation', (e) => {
@@ -642,7 +628,7 @@
         });
     });
 
-    // GPS Tracking
+    // GPS Tracking Route
     document.getElementById('trackBtn').addEventListener('click', () => {
         const trackBtn = document.getElementById('trackBtn');
         if (!isTracking) {
@@ -667,7 +653,7 @@
         }
     });
 
-    // Wetter & Schwammdruck-Berechnung
+    // Wetter & Regen in mm (Open-Meteo API) für den jeweiligen Spot in der Nähe
     async function fetchWeatherData(lat, lon) {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=14&forecast_days=1&daily=precipitation_sum,temperature_2m_mean&timezone=auto`;
         const res = await fetch(url);
@@ -694,9 +680,10 @@
         };
     }
 
+    // Waldflächen via Overpass API laden
     function fetchForests(filterTag) {
-        if (map.getZoom() < 11) { document.getElementById('status').innerText = "Bitte näher heranzoomen!"; return; }
-        document.getElementById('status').innerText = "Lade Habitate...";
+        if (map.getZoom() < 11) { document.getElementById('status').innerText = "Bitte näher heranzoomen (Zoom > 11)!"; return; }
+        document.getElementById('status').innerText = "Lade passende Wälder...";
         forestLayer.clearLayers();
         const bounds = map.getBounds();
         const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
@@ -705,7 +692,7 @@
         fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
         .then(res => res.json())
         .then(data => renderGeoJson(data))
-        .catch(() => document.getElementById('status').innerText = "Fehler beim Laden.");
+        .catch(() => document.getElementById('status').innerText = "Fehler beim Laden der Wälder.");
     }
 
     function renderGeoJson(data) {
@@ -714,23 +701,23 @@
             style: { color: "#34d399", weight: 2, fillColor: "#10b981", fillOpacity: 0.3 },
             onEachFeature: function (feature, layer) {
                 layer.on('click', async function (e) {
-                    layer.bindPopup('Berechne Schwammdruck-Index...').openPopup(e.latlng);
+                    layer.bindPopup('Berechne lokalen Regen & Schwammdruck...').openPopup(e.latlng);
                     const weather = await fetchWeatherData(e.latlng.lat, e.latlng.lng);
                     let distText = userCoords ? `📍 Entfernung: <b>${calculateDistance(userCoords.lat, userCoords.lon, e.latlng.lat, e.latlng.lng).toFixed(1)} km</b>` : '';
                     
                     layer.setPopupContent(`
                         <div class="weather-popup">
-                            <h3>Schwammdruck-Index: ${weather.score}%</h3>
+                            <h3>Schwammdruck: ${weather.score}%</h3>
                             <div class="score-bar-bg"><div class="score-bar-fill" style="width: ${weather.score}%;"></div></div>
-                            <div style="font-size:12px; margin-top:6px;">💧 Regen (14 Tage): <b>${weather.rainTotal} mm</b></div>
-                            <div style="font-size:12px;">🌡️ Ø Temp: <b>${weather.tempAvg} °C</b></div>
+                            <div style="font-size:12px; margin-top:6px;">💧 Regen (letzte 14 Tage): <b>${weather.rainTotal} mm</b></div>
+                            <div style="font-size:12px;">🌡️ Ø Temperatur: <b>${weather.tempAvg} °C</b></div>
                             <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${distText}</div>
                         </div>
                     `);
                 });
             }
         }).addTo(forestLayer);
-        document.getElementById('status').innerText = `${geojson.features.length} Waldflächen geladen!`;
+        document.getElementById('status').innerText = `${geojson.features.length} Waldgebiete auf der Pilzmap geladen!`;
     }
 
     function osmtogeojson(data) {
