@@ -319,6 +319,17 @@ place-items:center;
 font-size:21px;
 
 box-shadow:0 7px 18px #0007;
+
+transition:.12s;
+}
+
+.map-btn:active{
+transform:scale(.94);
+background:#18382e;
+}
+
+#searchAreaBtn{
+font-size:20px;
 }
 
 /* =========================
@@ -728,7 +739,10 @@ font-weight:800;
 margin-top:7px;
 }
 
-/* LIVE WALD */
+/* =========================
+LIVE WALD
+========================= */
+
 .habitat-polygon{
 fill:#17d99d;
 fill-opacity:.13;
@@ -765,7 +779,10 @@ border:1px solid #6cf0c6;
 box-shadow:0 3px 10px #0008;
 }
 
-/* Desktop */
+/* =========================
+DESKTOP
+========================= */
+
 @media(min-width:800px){
 
 .topbar{
@@ -796,6 +813,7 @@ right:20px;
 
 border-radius:20px 20px 0 0;
 }
+
 }
 </style>
 </head>
@@ -899,6 +917,14 @@ placeholder="Ort, Wald oder Pilz suchen…">
 <button class="map-btn" id="zoomIn">+</button>
 
 <button class="map-btn" id="zoomOut">−</button>
+
+<!-- NEU: Im aktuellen Kartenausschnitt suchen -->
+<button
+class="map-btn"
+id="searchAreaBtn"
+title="Hier suchen">
+🔎
+</button>
 
 <button class="map-btn" id="locBtn">➤</button>
 
@@ -1260,12 +1286,6 @@ popupAnchor:[0,-22]
 }
 
 
-/*
-Keine erfundenen Fundorte mehr.
-Die Pilzspots können später aus einer echten
-Fund-Datenquelle ergänzt werden.
-*/
-
 function drawMushrooms(){
 
 mushroomLayer.clearLayers();
@@ -1333,7 +1353,8 @@ const timeout = setTimeout(
 28000
 );
 
-const response = await fetch(
+const response =
+await fetch(
 endpoint,
 {
 method:"POST",
@@ -1355,17 +1376,24 @@ throw new Error(
 
 }
 
-const data = await response.json();
+const data =
+await response.json();
 
-if(data && Array.isArray(data.elements)){
+if(
+data &&
+Array.isArray(data.elements)
+){
 
 return data.elements;
 
 }
 
-throw new Error("Keine gültigen Daten");
+throw new Error(
+"Keine gültigen Daten"
+);
 
 }
+
 catch(error){
 
 lastError = error;
@@ -1374,7 +1402,10 @@ lastError = error;
 
 }
 
-throw lastError || new Error("Overpass nicht erreichbar");
+throw lastError ||
+new Error(
+"Overpass nicht erreichbar"
+);
 
 }
 
@@ -1717,7 +1748,9 @@ habitatName =
 "🌳 Wald mit Birken-Hinweisen";
 
 matching.push(
-species.find(x => x.id === "birkenpilz")
+species.find(
+x => x.id === "birkenpilz"
+)
 );
 
 }
@@ -1727,11 +1760,15 @@ if(
 ){
 
 matching.push(
-species.find(x => x.id === "marone")
+species.find(
+x => x.id === "marone"
+)
 );
 
 matching.push(
-species.find(x => x.id === "fliegenpilz")
+species.find(
+x => x.id === "fliegenpilz"
+)
 );
 
 }
@@ -1741,7 +1778,9 @@ if(
 ){
 
 matching.push(
-species.find(x => x.id === "steinpilz")
+species.find(
+x => x.id === "steinpilz"
+)
 );
 
 }
@@ -1751,7 +1790,9 @@ if(
 ){
 
 matching.push(
-species.find(x => x.id === "marone")
+species.find(
+x => x.id === "marone"
+)
 );
 
 }
@@ -1759,9 +1800,19 @@ species.find(x => x.id === "marone")
 if(!matching.length){
 
 matching = [
-species.find(x => x.id === "steinpilz"),
-species.find(x => x.id === "marone"),
-species.find(x => x.id === "pfifferling")
+
+species.find(
+x => x.id === "steinpilz"
+),
+
+species.find(
+x => x.id === "marone"
+),
+
+species.find(
+x => x.id === "pfifferling"
+)
+
 ];
 
 }
@@ -1778,7 +1829,9 @@ habitatName =
 
 matching = [
 
-species.find(x => x.id === "parasol")
+species.find(
+x => x.id === "parasol"
+)
 
 ];
 
@@ -1862,7 +1915,9 @@ data-live-species="${esc(item.id)}">
 `;
 
 speciesBox
-.querySelectorAll("[data-live-species]")
+.querySelectorAll(
+"[data-live-species]"
+)
 .forEach(button => {
 
 button.onclick = () =>
@@ -1981,6 +2036,162 @@ false
 
 }
 );
+
+
+/* =========================================================
+NEU: AKTUELLEN KARTENAUSSCHNITT SUCHEN
+========================================================= */
+
+async function searchCurrentMapArea(){
+
+const button =
+document.getElementById(
+"searchAreaBtn"
+);
+
+const center =
+map.getCenter();
+
+const bounds =
+map.getBounds();
+
+button.textContent = "⏳";
+
+button.disabled = true;
+
+document.getElementById(
+"gpsText"
+).textContent =
+"🔎 Kartenausschnitt wird durchsucht…";
+
+
+try{
+
+/*
+Breite und Höhe des sichtbaren Bereichs
+in Metern berechnen.
+*/
+
+const north =
+bounds.getNorth();
+
+const south =
+bounds.getSouth();
+
+const east =
+bounds.getEast();
+
+const west =
+bounds.getWest();
+
+const horizontalDistance =
+map.distance(
+[center.lat,west],
+[center.lat,east]
+);
+
+const verticalDistance =
+map.distance(
+[south,center.lng],
+[north,center.lng]
+);
+
+
+/*
+Wir nehmen die größere Hälfte als Radius.
+Damit wird ungefähr der komplette
+sichtbare Kartenausschnitt abgedeckt.
+*/
+
+let radius =
+Math.ceil(
+Math.max(
+horizontalDistance,
+verticalDistance
+) / 2
+);
+
+
+/*
+Sicherheit: nicht zu klein und nicht
+unnötig riesig an Overpass schicken.
+*/
+
+radius =
+Math.min(
+Math.max(radius,100),
+5000
+);
+
+
+/*
+Live-Daten genau rund um die Kartenmitte
+laden.
+*/
+
+const elements =
+await queryOverpass(
+center.lat,
+center.lng,
+radius
+);
+
+
+/*
+Die Daten auf der Karte darstellen.
+*/
+
+renderLiveHabitat(
+elements,
+center.lat,
+center.lng
+);
+
+document.getElementById(
+"gpsText"
+).textContent =
+`🔎 Bereich durchsucht · ${elements.length} Objekte · Radius ${formatDistance(radius)}`;
+
+
+/*
+Wenn die Suche erfolgreich war,
+wird die Kartenmitte nicht verändert.
+*/
+
+}
+catch(error){
+
+console.error(error);
+
+document.getElementById(
+"gpsText"
+).textContent =
+"❌ Bereich konnte nicht geladen werden";
+
+alert(
+"Die Suche für den aktuellen Kartenausschnitt ist momentan nicht verfügbar."
+);
+
+}
+finally{
+
+button.textContent = "🔎";
+
+button.disabled = false;
+
+}
+
+}
+
+
+/*
+Button aktivieren
+*/
+
+document.getElementById(
+"searchAreaBtn"
+).onclick =
+searchCurrentMapArea;
 
 
 /* =========================================================
@@ -2332,7 +2543,9 @@ query.toLowerCase()
 
 if(mushroom){
 
-showSpecies(mushroom.id);
+showSpecies(
+mushroom.id
+);
 
 return;
 
@@ -2372,7 +2585,9 @@ false
 }
 else{
 
-alert("Ort nicht gefunden.");
+alert(
+"Ort nicht gefunden."
+);
 
 }
 
@@ -2892,6 +3107,49 @@ drawMushrooms();
 
 
 /* =========================================================
+SATELLIT / KARTE
+========================================================= */
+
+let satelliteVisible = true;
+
+document.getElementById(
+"satLayerBtn"
+).addEventListener(
+"click",
+() => {
+
+satelliteVisible =
+!satelliteVisible;
+
+setToggle(
+"satToggle",
+satelliteVisible
+);
+
+if(satelliteVisible){
+
+if(map.hasLayer(mapLayer)){
+map.removeLayer(mapLayer);
+}
+
+satelliteLayer.addTo(map);
+
+}
+else{
+
+if(map.hasLayer(satelliteLayer)){
+map.removeLayer(satelliteLayer);
+}
+
+mapLayer.addTo(map);
+
+}
+
+}
+);
+
+
+/* =========================================================
 COMMUNITY
 ========================================================= */
 
@@ -2944,6 +3202,29 @@ communityLayer
 
 }
 );
+
+
+/* =========================================================
+MENÜ
+========================================================= */
+
+document.getElementById(
+"menuBtn"
+).onclick =
+() => {
+
+const menu =
+document.getElementById("sideMenu");
+
+menu.classList.toggle("open");
+
+document.getElementById(
+"menuBtn"
+).classList.toggle(
+"active"
+);
+
+};
 
 
 /* =========================================================
