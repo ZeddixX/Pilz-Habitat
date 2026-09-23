@@ -2,721 +2,416 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilz-Habitat-Finder Pro Master</title>
-    
-    <!-- PWA Integration -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#090d16">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628324.png">
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Transformer.js für echte Offline-KI-Bildanalyse im Browser -->
-    <script type="module">
-        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.14.0';
-        window.pipeline = pipeline;
-    </script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meine Pilzfunde</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background: #090d16; color: #f1f5f9; overflow: hidden; 
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        #map { height: 100vh; width: 100vw; z-index: 1; background: #090d16; }
-        
-        .app-card { 
-            position: absolute; top: 16px; left: 16px; z-index: 1000; 
-            width: calc(100% - 32px); max-width: 410px; 
-            background: rgba(15, 23, 42, 0.94); 
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 16px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 88vh; overflow-y: auto;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-
-        .app-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-        .app-title { font-size: 16px; font-weight: 800; color: #34d399; margin: 0; display: flex; align-items: center; gap: 8px; }
-        
-        .toggle-btn {
-            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8; width: 32px; height: 32px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
-        }
-
-        .collapsible-content { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
-
-        .search-group { display: flex; gap: 8px; }
-        .input-field { 
-            flex: 1; padding: 11px 14px; border-radius: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.12); 
-            background: rgba(30, 41, 59, 0.7); font-size: 13.5px; color: #f8fafc; outline: none; 
-        }
-        .input-field:focus { border-color: #34d399; box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2); }
-        
-        select.input-field { 
-            appearance: none; 
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2094a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
-            background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; 
-            padding-right: 36px; font-weight: 600; color: #f1f5f9;
-        }
-        
-        .btn { 
-            border: none; border-radius: 12px; padding: 11px 14px; font-size: 13px; font-weight: 700; 
-            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
-            transition: transform 0.1s, background 0.2s; 
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
-        .btn-gps { width: 100%; background: #0284c7; color: white; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
-        .btn-spot { width: 100%; background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
-        .btn-ai { width: 100%; background: #d97706; color: white; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3); }
-        .btn-community { width: 100%; background: #0d9488; color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3); }
-        .btn-track { width: 100%; background: #ea580c; color: white; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); }
-        .btn-track.active { background: #dc2626; animation: pulse 1.5s infinite; }
-        
-        .quick-region-group { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-        .chip { 
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); 
-            padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; 
-            color: #cbd5e1; white-space: nowrap; cursor: pointer; 
-        }
-        .chip:hover { background: rgba(52, 211, 153, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
-
-        .dashboard-box {
-            background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px; padding: 10px; display: flex; justify-style: space-around; text-align: center;
-        }
-        .dash-item { display: flex; flex-direction: column; flex: 1; }
-        .dash-num { font-size: 16px; font-weight: 800; color: #34d399; }
-        .dash-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
-
-        .season-box {
-            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(52, 211, 153, 0.2);
-            border-radius: 12px; padding: 10px; font-size: 12px; color: #34d399;
-        }
-
-        .btn-group-row { display: flex; gap: 8px; }
-        .btn-secondary { flex: 1; background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); }
-        .btn-clear { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
-        
-        .btn-tile { 
-            position: absolute; bottom: 24px; left: 16px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.9); color: #f1f5f9; font-weight: 700; 
-            padding: 10px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
-            border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
-        }
-        
-        .info-card { 
-            padding: 12px; background: rgba(30, 41, 59, 0.6); 
-            border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); display: none; 
-        }
-        .info-tag-group { display: flex; flex-direction: column; gap: 8px; }
-        .info-tag { font-size: 12px; color: #cbd5e1; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
-        .badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; flex-shrink: 0; }
-        .badge-tree { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .badge-plant { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .badge-soil { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
-        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        
-        #status { font-size: 12px; font-weight: 500; color: #94a3b8; }
-        
-        .custom-spot-icon { background: transparent; border: none; font-size: 20px; text-align: center; }
-        .user-heading-icon { font-size: 24px; text-shadow: 0 0 10px rgba(52,211,153,0.8); }
-
-        .leaflet-popup-content-wrapper { 
-            background: rgba(15, 23, 42, 0.95) !important; color: #f8fafc !important;
-            border-radius: 16px !important; padding: 4px !important; 
-            border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px);
-        }
-        .leaflet-popup-tip { background: rgba(15, 23, 42, 0.95) !important; }
-        .weather-popup h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #f1f5f9; }
-        .score-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin: 6px 0; }
-        .score-bar-fill { height: 100%; background: linear-gradient(90deg, #f87171, #fbbf24, #34d399); transition: width 0.5s ease; }
-
-        .modal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-            align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal-content {
-            background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-            padding: 20px; max-width: 400px; width: 100%; color: #f8fafc; position: relative;
-        }
-        .close-modal { position: absolute; right: 16px; top: 16px; font-size: 20px; cursor: pointer; color: #94a3b8; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
-<body>
+<body class="bg-stone-900 text-stone-100 min-h-screen pb-12 font-sans selection:bg-emerald-500 selection:text-white">
 
-<div class="app-card" id="appCard">
-    <div class="app-header" id="headerToggle">
-        <h1 class="app-title">🌲 Habitat Finder Pro Master</h1>
-        <button class="toggle-btn" id="toggleIcon">▲</button>
-    </div>
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-stone-900/90 backdrop-blur-md border-b border-stone-800 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl shadow-lg shadow-emerald-900/30">
+                    <i class="fa-solid font-bold fa-tree"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide text-stone-100">PilzTracker</h1>
+                    <p class="text-xs text-stone-400">Meine Wald- und Fundtagebuch-App</p>
+                </div>
+            </div>
+            <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all text-white px-3.5 py-2 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-md shadow-emerald-900/20">
+                <i class="fa-solid fa-plus"></i>
+                <span class="hidden sm:inline">Neuer Fund</span>
+            </button>
+        </div>
+    </header>
 
-    <div class="collapsible-content" id="menuContent">
-        <!-- Statistik Dashboard -->
-        <div class="dashboard-box">
-            <div class="dash-item"><span class="dash-num" id="statSpots">0</span><span class="dash-lbl">Spots</span></div>
-            <div class="dash-item"><span class="dash-num" id="statKm">0.0</span><span class="dash-lbl">km Pfad</span></div>
-            <div class="dash-item"><span class="dash-num" id="statMonth">-</span><span class="dash-lbl">Monat</span></div>
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 pt-6">
+
+        <!-- Search & Stats Bar -->
+        <div class="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center mb-6">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"></i>
+                <input type="text" id="searchInput" oninput="renderGrid()" placeholder="Fund, Ort oder Baumbestand suchen..." 
+                       class="w-full bg-stone-800/80 border border-stone-700/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:border-emerald-500 transition-colors">
+            </div>
+            <!-- Counter Badge -->
+            <div class="flex items-center justify-between sm:justify-start space-x-2 bg-stone-800/50 border border-stone-800 rounded-xl px-4 py-2 text-xs text-stone-400">
+                <span>Gespeicherte Funde:</span>
+                <span id="fundCount" class="font-bold text-emerald-400 text-sm">0</span>
+            </div>
         </div>
 
-        <!-- Saison Check -->
-        <div class="season-box" id="seasonNotice">
-            📅 <b>Saison-Aktivität:</b> Lade Monatsübersicht...
+        <!-- Grid Container -->
+        <div id="fungiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Cards generated dynamically -->
         </div>
 
-        <!-- Schnellfilter Norddeutschland -->
-        <div class="quick-region-group">
-            <div class="chip" onclick="flyToRegion(53.55, 10.35, 12, 'Sachsenwald')">🌲 Sachsenwald</div>
-            <div class="chip" onclick="flyToRegion(53.25, 9.95, 11, 'Lüneburger Heide')">🌾 Lüneburger Heide</div>
-            <div class="chip" onclick="flyToRegion(54.15, 10.60, 11, 'Holsteinische Schweiz')">🏞️ Holstein. Schweiz</div>
-            <div class="chip" onclick="flyToRegion(51.80, 10.60, 11, 'Harz')">⛰️ Harz</div>
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 px-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-stone-800 flex items-center justify-center text-stone-500 text-3xl mb-4">
+                <i class="fa-solid fa-compass"></i>
+            </div>
+            <h3 class="text-lg font-medium text-stone-300">Keine Funde gefunden</h3>
+            <p class="text-stone-500 text-sm mt-1 max-w-sm mx-auto">Es wurden noch keine Einträge gespeichert oder deine Suchanfrage hat keine Treffer erzielt.</p>
+            <button onclick="openAddModal()" class="mt-4 inline-flex items-center space-x-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 px-4 py-2 rounded-xl text-sm transition-colors border border-emerald-500/30">
+                <i class="fa-solid fa-plus"></i>
+                <span>Ersten Fund anlegen</span>
+            </button>
         </div>
+    </main>
 
-        <div class="search-group">
-            <input type="text" id="citySearch" class="input-field" placeholder="Ort oder Stadt suchen...">
-            <button id="searchBtn" class="btn btn-primary">Suchen</button>
-        </div>
+    <!-- Modal: Detail Ansicht -->
+    <div id="detailModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-stone-900 border border-stone-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
+            <button onclick="closeDetailModal()" class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-stone-900/80 text-stone-300 hover:text-white flex items-center justify-center backdrop-blur-md border border-stone-700/50">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
 
-        <button id="locBtn" class="btn btn-gps">📍 Standort & Kompass</button>
-        <button id="trackBtn" class="btn btn-track">🐾 Route aufzeichnen (GPS)</button>
-        <button id="spotBtn" class="btn btn-spot">⭐ Spot + Foto & Notiz speichern</button>
-        <button id="aiBtn" class="btn btn-ai">📷 KI-Pilzerkennung</button>
-        <button id="communityBtn" class="btn btn-community">👥 Fundmeldung teilen</button>
-
-        <div class="btn-group-row">
-            <button id="exportBtn" class="btn btn-secondary">📤 Export</button>
-            <button id="importBtn" class="btn btn-secondary">📥 Import</button>
-            <button id="clearTrackBtn" class="btn btn-secondary btn-clear">🧹 Track löschen</button>
-            <input type="file" id="importFile" accept=".json" style="display:none;">
-            <input type="file" id="aiImageInput" accept="image/*" capture="environment" style="display:none;">
-            <input type="file" id="spotImageInput" accept="image/*" style="display:none;">
-        </div>
-
-        <select id="pilzSelect" class="input-field" style="width: 100%;">
-            <option value="">-- Pilzart auswählen --</option>
-            <option value="steinpilz">🍄 Steinpilz</option>
-            <option value="marone">🌲 Maronen-Röhrling</option>
-            <option value="fliegenpilz">🍄 Fliegenpilz (Zeigerpilz)</option>
-            <option value="pfifferling">🟡 Echter Pfifferling</option>
-            <option value="birkenpilz">🌳 Birkenpilz</option>
-            <option value="parasol">🌾 Parasol-Riesenschirmling</option>
-        </select>
-
-        <div id="habitatInfo" class="info-card"></div>
-        <div id="status">Suche einen Ort oder wähle eine Pilzart.</div>
-    </div>
-</div>
-
-<button id="mapToggle" class="btn-tile">🗺️ Satellit</button>
-
-<div id="map"></div>
-
-<!-- Modal für KI-Pilzerkennung -->
-<div id="aiModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" id="closeAiModal">&times;</span>
-        <h3>🔍 KI-Pilzanalyse</h3>
-        <p style="font-size: 12px; color: #94a3b8;">Nimm ein Foto auf, um eine genaue Pixel-Analyse zu starten.</p>
-        <div id="aiPreview" style="margin: 10px 0; text-align: center;"></div>
-        <div id="aiResult" style="font-size: 13px; font-weight: 600; color: #34d399;"></div>
-        <div style="margin-top: 15px; padding: 10px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 11px; color: #f87171;">
-            ⚠️ <b>WICHTIGER HINWEIS:</b> Vertraue niemals allein einer KI! Verzehre nur Pilze, die du zu 100% selbst sicher bestimmt hast.
+            <div id="detailContent">
+                <!-- Dynamic Detail Layout -->
+            </div>
         </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Modal: Neuer Fund Hinzufügen -->
+    <div id="addModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-stone-900 border border-stone-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center px-5 py-4 border-b border-stone-800">
+                <h3 class="font-bold text-stone-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-leaf text-emerald-500"></i>
+                    <span>Neuen Fund dokumentieren</span>
+                </h3>
+                <button onclick="closeAddModal()" class="text-stone-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
 
-<!-- JAVASCRIPT LOGIK (Direkt am Ende der Datei vor </body>) -->
-<script>
-    // 1. Service Worker Registrierung
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
-        });
-    }
+            <form id="addFundForm" onsubmit="saveNewFund(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-400 mb-1">Pilzname / Artenname *</label>
+                    <input type="text" id="addName" required placeholder="z.B. Fliegenpilz, Maronenröhrling..." 
+                           class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500">
+                </div>
 
-    // Header Toggle
-    const headerToggle = document.getElementById('headerToggle');
-    const menuContent = document.getElementById('menuContent');
-    const toggleIcon = document.getElementById('toggleIcon');
-    let isCollapsed = false;
-
-    headerToggle.addEventListener('click', () => {
-        isCollapsed = !isCollapsed;
-        menuContent.style.display = isCollapsed ? 'none' : 'flex';
-        toggleIcon.innerText = isCollapsed ? '▼' : '▲';
-    });
-
-    // Leaflet Layers
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
-    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
-
-    const map = L.map('map', { zoomControl: false, layers: [osmLayer] }).setView([53.55, 9.99], 11);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    let currentLayer = 'osm';
-    document.getElementById('mapToggle').addEventListener('click', () => {
-        if (currentLayer === 'osm') {
-            map.removeLayer(osmLayer);
-            map.addLayer(satLayer);
-            currentLayer = 'sat';
-            document.getElementById('mapToggle').innerText = '🗺️ Karte';
-        } else {
-            map.removeLayer(satLayer);
-            map.addLayer(osmLayer);
-            currentLayer = 'osm';
-            document.getElementById('mapToggle').innerText = '🗺️ Satellit';
-        }
-    });
-
-    let forestLayer = L.layerGroup().addTo(map);
-    let spotLayer = L.layerGroup().addTo(map);
-    let communityLayer = L.layerGroup().addTo(map);
-    let userMarker = null;
-    let userCoords = null;
-
-    // GPS Tracking
-    let isTracking = false;
-    let watchId = null;
-    let trackPath = [];
-    let polylineLayer = L.polyline([], { color: '#ea580c', weight: 4, dashArray: '6, 8' }).addTo(map);
-
-    // Habitat-Datenbank
-    const HABITAT_DATA = {
-        steinpilz: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Buchen, Eichen, Kiefern', zeiger: 'Fliegenpilz, Heidelbeersträucher', boden: 'Saurer Boden', gefahr: '⚠️ Gallenröhrling' },
-        marone: { tag: '["leaf_type"="needleleaved"]', baeume: 'Fichten, Kiefern', zeiger: 'Dichte Moospolster', boden: 'Saurer Nadelwaldboden', gefahr: '⚠️ Gallenröhrling' },
-        fliegenpilz: { tag: '["leaf_type"~"needleleaved|mixed"]', baeume: 'Fichten, Birken', zeiger: 'Zeigt Steinpilze an!', boden: 'Saurer Waldboden', gefahr: '⚠️ Giftig!' },
-        pfifferling: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Kiefern, Buchen', zeiger: 'Lichte Moosstellen', boden: 'Nährstoffarm', gefahr: '⚠️ Falscher Pfifferling' },
-        birkenpilz: { tag: '["leaf_type"~"broadleaved|mixed"]', baeume: 'Birken', zeiger: 'Birkenhaine', boden: 'Feuchte Böden', gefahr: '⚠️ Bittere Röhrlinge' },
-        parasol: { tag: '', baeume: 'Mischwaldränder', zeiger: 'Waldgräser', boden: 'Humusreich', gefahr: '⚠️ Gift-Riesenschirmling' }
-    };
-
-    // Schnell-Navigation für Regionen
-    window.flyToRegion = function(lat, lng, zoom, name) {
-        map.flyTo([lat, lng], zoom, { duration: 1.5 });
-        document.getElementById('status').innerText = `Region angeflogen: ${name}`;
-    };
-
-    // Saison-Update
-    function updateSeasonInfo() {
-        const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-        const now = new Date();
-        const curM = now.getMonth();
-        document.getElementById('statMonth').innerText = monthNames[curM];
-
-        let text = "";
-        if (curM >= 8 && curM <= 10) {
-            text = `🔥 <b>Hauptsaison (${monthNames[curM]}):</b> Perfekt für Steinpilze, Maronen & Pfifferlinge!`;
-        } else if (curM >= 5 && curM <= 7) {
-            text = `🟡 <b>Frühsaison (${monthNames[curM]}):</b> Pfifferlinge & Sommersteinpilze möglich.`;
-        } else {
-            text = `❄️ <b>Nebensaison (${monthNames[curM]}):</b> Ausschau halten nach Austernseitlingen & Samtfußrüblingen.`;
-        }
-        document.getElementById('seasonNotice').innerHTML = `📅 ${text}`;
-    }
-    updateSeasonInfo();
-
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-    }
-
-    // Statistik-Anzeige aktualisieren
-    function updateStats() {
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
-        document.getElementById('statSpots').innerText = saved.length;
-        
-        let totalKm = 0;
-        for (let i = 0; i < trackPath.length - 1; i++) {
-            totalKm += calculateDistance(trackPath[i][0], trackPath[i][1], trackPath[i+1][0], trackPath[i+1][1]);
-        }
-        document.getElementById('statKm').innerText = totalKm.toFixed(1);
-    }
-
-    // Spots mit Notizen & Fotos
-    let pendingSpotCoords = null;
-    const spotImageInput = document.getElementById('spotImageInput');
-
-    document.getElementById('spotBtn').addEventListener('click', () => {
-        pendingSpotCoords = map.getCenter();
-        const spotName = prompt("Name/Pilzart für diesen Spot:", "Steinpilze");
-        if (!spotName) return;
-        const note = prompt("Notiz hinzufügen:", "Unter der großen Fichte gefunden");
-        
-        if (confirm("Möchtest du ein Foto anfügen?")) {
-            spotImageInput.dataset.name = spotName;
-            spotImageInput.dataset.note = note || '';
-            spotImageInput.click();
-        } else {
-            saveSpot(spotName, note, null);
-        }
-    });
-
-    spotImageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        const name = spotImageInput.dataset.name;
-        const note = spotImageInput.dataset.note;
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (evt) => saveSpot(name, note, evt.target.result);
-            reader.readAsDataURL(file);
-        } else {
-            saveSpot(name, note, null);
-        }
-    });
-
-    function saveSpot(name, note, imgData) {
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
-        saved.push({
-            lat: pendingSpotCoords.lat,
-            lng: pendingSpotCoords.lng,
-            name: name,
-            note: note,
-            img: imgData,
-            date: new Date().toLocaleDateString('de-DE')
-        });
-        localStorage.setItem('pilz_spots', JSON.stringify(saved));
-        loadSavedSpots();
-        document.getElementById('status').innerText = "Fundort gespeichert!";
-    }
-
-    function loadSavedSpots() {
-        spotLayer.clearLayers();
-        const saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
-        saved.forEach((spot, index) => {
-            const marker = L.marker([spot.lat, spot.lng], {
-                icon: L.divIcon({ className: 'custom-spot-icon', html: '⭐', iconSize: [24, 24] })
-            }).addTo(spotLayer);
-
-            const shareUrl = `https://maps.google.com/?q=${spot.lat},${spot.lng}`;
-            const imgHtml = spot.img ? `<img src="${spot.img}" style="width:100%; border-radius:8px; margin-top:6px; max-height:120px; object-fit:cover;">` : '';
-
-            marker.bindPopup(`
-                <div style="padding:4px; color:#f8fafc; max-width:200px;">
-                    <b>⭐ ${spot.name || 'Fundort'}</b><br>
-                    <small style="color:#94a3b8;">${spot.date}</small>
-                    ${spot.note ? `<p style="font-size:11px; margin:4px 0; color:#cbd5e1;">${spot.note}</p>` : ''}
-                    ${imgHtml}
-                    <div style="display:flex; gap:6px; margin-top:8px;">
-                        <button onclick="window.open('${shareUrl}', '_blank')" style="background:rgba(52,211,153,0.2); color:#34d399; border:1px solid rgba(52,211,153,0.3); padding:4px 8px; border-radius:6px; cursor:pointer;">📲 Teilen</button>
-                        <button onclick="deleteSpot(${index})" style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(248, 113, 113, 0.3); padding:4px 8px; border-radius:6px; cursor:pointer;">Löschen</button>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-400 mb-1">Datum *</label>
+                        <input type="date" id="addDate" required 
+                               class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-400 mb-1">Essbarkeit</label>
+                        <select id="addEdibility" class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500">
+                            <option value="Speisepilz">Speisepilz</option>
+                            <option value="Ungenießbar">Ungenießbar</option>
+                            <option value="Giftig">Giftig / Stark giftig</option>
+                            <option value="Unbekannt">Unbekannt / Recherche</option>
+                        </select>
                     </div>
                 </div>
-            `);
-        });
-        updateStats();
-    }
 
-    window.deleteSpot = function(index) {
-        let saved = JSON.parse(localStorage.getItem('pilz_spots') || '[]');
-        saved.splice(index, 1);
-        localStorage.setItem('pilz_spots', JSON.stringify(saved));
-        loadSavedSpots();
-    };
+                <div>
+                    <label class="block text-xs font-semibold text-stone-400 mb-1">Fundort / Waldstück *</label>
+                    <input type="text" id="addLocation" required placeholder="z.B. Sachsenwald nahe Eichengruppe" 
+                           class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500">
+                </div>
 
-    // Export & Import
-    document.getElementById('exportBtn').addEventListener('click', () => {
-        const saved = localStorage.getItem('pilz_spots') || '[]';
-        const blob = new Blob([saved], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `pilz_fundorte_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-    });
+                <div>
+                    <label class="block text-xs font-semibold text-stone-400 mb-1">Hauptfoto URL (z.B. Unsplash Link)</label>
+                    <input type="url" id="addImage" placeholder="https://..." 
+                           class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500">
+                </div>
 
-    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
-    document.getElementById('importFile').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            try {
-                const data = JSON.parse(evt.target.result);
-                if (Array.isArray(data)) {
-                    localStorage.setItem('pilz_spots', JSON.stringify(data));
-                    loadSavedSpots();
-                    document.getElementById('status').innerText = "Fundorte importiert!";
-                }
-            } catch { document.getElementById('status').innerText = "Fehlerhafte Datei!"; }
-        };
-        reader.readAsText(file);
-    });
+                <div>
+                    <label class="block text-xs font-semibold text-stone-400 mb-1">Notizen & Merkmale (Lamellen, Stiel, Geruch)</label>
+                    <textarea id="addNotes" rows="3" placeholder="Schnittbild-Verfärbung, Nadelwald, Begleitbäume..." 
+                              class="w-full bg-stone-800 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-stone-100 focus:outline-none focus:border-emerald-500"></textarea>
+                </div>
 
-    document.getElementById('clearTrackBtn').addEventListener('click', () => {
-        trackPath = [];
-        polylineLayer.setLatLngs([]);
-        updateStats();
-        document.getElementById('status').innerText = "GPS-Pfad gelöscht.";
-    });
+                <div class="flex justify-end space-x-3 pt-3 border-t border-stone-800">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-sm text-stone-400 hover:text-stone-200">Abbrechen</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+                        Fund Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    loadSavedSpots();
-
-    // Echte KI-Bildanalyse
-    const aiModal = document.getElementById('aiModal');
-    const aiBtn = document.getElementById('aiBtn');
-    const aiImageInput = document.getElementById('aiImageInput');
-    const closeAiModal = document.getElementById('closeAiModal');
-    let classifier = null;
-
-    aiBtn.addEventListener('click', () => aiImageInput.click());
-    closeAiModal.addEventListener('click', () => aiModal.style.display = 'none');
-
-    aiImageInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            const imgUrl = evt.target.result;
-            document.getElementById('aiPreview').innerHTML = `<img id="aiImgElement" src="${imgUrl}" style="max-width:100%; max-height:180px; border-radius:12px;">`;
-            document.getElementById('aiResult').innerText = "⏳ Lade KI-Modell & analysiere Bild...";
-            aiModal.style.display = 'flex';
-
-            try {
-                if (!classifier && window.pipeline) {
-                    classifier = await window.pipeline('image-classification', 'Xenova/resnet-50');
-                }
-
-                if (classifier) {
-                    const imgElement = document.getElementById('aiImgElement');
-                    const results = await classifier(imgElement.src);
-                    
-                    if (results && results.length > 0) {
-                        const topResult = results[0];
-                        const percent = Math.round(topResult.score * 100);
-                        document.getElementById('aiResult').innerHTML = `
-                            <b>Analyse:</b> ${topResult.label}<br>
-                            <small style="color:#94a3b8;">Erkennungsgenauigkeit: ${percent}%</small>
-                        `;
-                    } else {
-                        document.getElementById('aiResult').innerText = "Kein Pilz erkannt.";
-                    }
-                } else {
-                    document.getElementById('aiResult').innerText = "KI-Modell konnte nicht initialisiert werden.";
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('aiResult').innerText = "Fehler bei der Bildanalyse.";
+    <!-- Application Script -->
+    <script>
+        // Default Sample Data if LocalStorage is empty
+        const initialFungiData = [
+            {
+                id: "fund-1",
+                name: "Fliegenpilz (Amanita muscaria)",
+                date: "2026-09-15",
+                location: "Sachsenwald (Koberg)",
+                edibility: "Giftig",
+                notes: "Auffällige rote Hutoberfläche mit weißen Flocken. Stand direkt unter einer jungen Birke im Moos. Stielbasis mit charakteristischer Scheide.",
+                images: [
+                    "https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=800&q=80",
+                    "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?auto=format&fit=crop&w=800&q=80"
+                ]
+            },
+            {
+                id: "fund-2",
+                name: "Kartoffelbovist (Scleroderma)",
+                date: "2026-09-02",
+                location: "Lüneburger Heide",
+                edibility: "Giftig",
+                notes: "Feste, gefelderte gelb-braune Außenschale. Beim Längsschnitt zeigt sich das dunkle, fast schwarze Innenleben (Gleba). Riecht stechend muffig.",
+                images: [
+                    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
+                    "https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=800&q=80"
+                ]
+            },
+            {
+                id: "fund-3",
+                name: "Maronen-Röhrling",
+                date: "2026-08-28",
+                location: "Forst Klövensteen",
+                edibility: "Speisepilz",
+                notes: "Schokoladenbrauner Hut. Gelbliche Poren auf der Unterseite verfärben sich bei sanftem Druck leicht bläulich. Fester Stiel.",
+                images: [
+                    "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?auto=format&fit=crop&w=800&q=80"
+                ]
             }
-        };
-        reader.readAsDataURL(file);
-    });
+        ];
 
-    // Anonyme Community-Meldungen
-    document.getElementById('communityBtn').addEventListener('click', () => {
-        const center = map.getCenter();
-        const pilzName = prompt("Welche Pilzart hast du in dieser Region entdeckt?", "Steinpilz");
-        if (!pilzName) return;
+        // State Management
+        let fungiList = [];
 
-        const latOffset = (Math.random() - 0.5) * 0.02;
-        const lngOffset = (Math.random() - 0.5) * 0.02;
-        
-        L.circle([center.lat + latOffset, center.lng + lngOffset], {
-            color: '#0d9488', fillColor: '#14b8a6', fillOpacity: 0.4, radius: 800
-        }).addTo(communityLayer).bindPopup(`
-            <div style="padding:4px; font-size:12px;">
-                <b>👥 Anonyme Fundmeldung</b><br>
-                Fund: ${pilzName}<br>
-                <small style="color:#94a3b8;">Saison in dieser Region aktiv!</small>
-            </div>
-        `);
-
-        document.getElementById('status').innerText = "Anonyme Fundmeldung geteilt!";
-    });
-
-    // Ortssuche & GPS
-    async function searchCity() {
-        const query = document.getElementById('citySearch').value.trim();
-        if (!query) return;
-        document.getElementById('status').innerText = "Suche Ort...";
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            if (data.length === 0) { document.getElementById('status').innerText = "Ort nicht gefunden."; return; }
-            map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 12);
-            document.getElementById('status').innerText = `Ort: ${data[0].display_name.split(',')[0]}`;
-            const selectedPilz = document.getElementById('pilzSelect').value;
-            if (selectedPilz) triggerPilzFetch(selectedPilz);
-        } catch { document.getElementById('status').innerText = "Fehler bei Ortssuche."; }
-    }
-
-    document.getElementById('searchBtn').addEventListener('click', searchCity);
-
-    document.getElementById('locBtn').addEventListener('click', () => {
-        if (!navigator.geolocation) { document.getElementById('status').innerText = "GPS nicht verfügbar."; return; }
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-            map.setView([userCoords.lat, userCoords.lon], 14);
-            
-            if (userMarker) map.removeLayer(userMarker);
-            const headingIcon = L.divIcon({
-                className: 'user-heading-icon',
-                html: '<div id="userHeadingArrow">🧭</div>',
-                iconSize: [30, 30], iconAnchor: [15, 15]
-            });
-
-            userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standpunkt</b>`).openPopup();
-            document.getElementById('status').innerText = "Standort lokalisiert.";
-
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', (e) => {
-                    let alpha = e.alpha || e.webkitCompassHeading;
-                    if (alpha !== null) {
-                        const arrow = document.getElementById('userHeadingArrow');
-                        if (arrow) arrow.style.transform = `rotate(${360 - alpha}deg)`;
-                    }
-                }, true);
+        function initApp() {
+            const saved = localStorage.getItem('pilz_funde_db');
+            if (saved) {
+                fungiList = JSON.parse(saved);
+            } else {
+                fungiList = initialFungiData;
+                saveToLocalStorage();
             }
-        });
-    });
-
-    // GPS Tracking
-    document.getElementById('trackBtn').addEventListener('click', () => {
-        const trackBtn = document.getElementById('trackBtn');
-        if (!isTracking) {
-            isTracking = true;
-            trackBtn.classList.add('active');
-            trackBtn.innerText = "🛑 Aufzeichnung stoppen";
-            document.getElementById('status').innerText = "Route wird aufgezeichnet...";
-            watchId = navigator.geolocation.watchPosition((pos) => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                userCoords = { lat, lon };
-                trackPath.push([lat, lon]);
-                polylineLayer.setLatLngs(trackPath);
-                updateStats();
-            }, () => {}, { enableHighAccuracy: true });
-        } else {
-            isTracking = false;
-            navigator.geolocation.clearWatch(watchId);
-            trackBtn.classList.remove('active');
-            trackBtn.innerText = "🐾 Route aufzeichnen (GPS)";
-            document.getElementById('status').innerText = "Route gestoppt.";
+            // Set default date in modal form to today
+            document.getElementById('addDate').value = new Date().toISOString().split('T')[0];
+            renderGrid();
         }
-    });
 
-    // Wetter & Schwammdruck-Berechnung
-    async function fetchWeatherData(lat, lon) {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=14&forecast_days=1&daily=precipitation_sum,temperature_2m_mean&timezone=auto`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const sums = data.daily?.precipitation_sum || [];
-        const temps = data.daily?.temperature_2m_mean || [];
-        
-        let rainTotal = sums.reduce((a, b) => a + (b || 0), 0);
-        let tempAvg = temps.length ? temps.reduce((a, b) => a + (b || 0), 0) / temps.length : 15;
-        
-        let score = 0;
-        if (rainTotal > 40) score += 60;
-        else score += (rainTotal / 40) * 60;
+        function saveToLocalStorage() {
+            localStorage.setItem('pilz_funde_db', JSON.stringify(fungiList));
+        }
 
-        if (tempAvg >= 12 && tempAvg <= 20) score += 40;
-        else if (tempAvg > 5 && tempAvg < 12) score += 20;
+        function renderGrid() {
+            const grid = document.getElementById('fungiGrid');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
 
-        score = Math.min(100, Math.round(score));
+            const filtered = fungiList.filter(item => 
+                item.name.toLowerCase().includes(searchVal) || 
+                item.location.toLowerCase().includes(searchVal) ||
+                item.notes.toLowerCase().includes(searchVal)
+            );
 
-        return { 
-            rainTotal: Math.round(rainTotal * 10)/10, 
-            tempAvg: Math.round(tempAvg * 10)/10,
-            score: score
-        };
-    }
+            document.getElementById('fundCount').innerText = filtered.length;
 
-    function fetchForests(filterTag) {
-        if (map.getZoom() < 11) { document.getElementById('status').innerText = "Bitte näher heranzoomen!"; return; }
-        document.getElementById('status').innerText = "Lade Habitate...";
-        forestLayer.clearLayers();
-        const bounds = map.getBounds();
-        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-        const query = `[out:json][timeout:25];(way["landuse"="forest"]${filterTag}(${bbox});way["natural"="wood"]${filterTag}(${bbox}););out body;>;out skel qt;`;
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
 
-        fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
-        .then(res => res.json())
-        .then(data => renderGeoJson(data))
-        .catch(() => document.getElementById('status').innerText = "Fehler beim Laden.");
-    }
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(item => {
+                const edibilityBadge = getEdibilityBadge(item.edibility);
+                const defaultImg = item.images && item.images.length > 0 ? item.images[0] : 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=800&q=80';
 
-    function renderGeoJson(data) {
-        const geojson = osmtogeojson(data);
-        L.geoJSON(geojson, {
-            style: { color: "#34d399", weight: 2, fillColor: "#10b981", fillOpacity: 0.3 },
-            onEachFeature: function (feature, layer) {
-                layer.on('click', async function (e) {
-                    layer.bindPopup('Berechne Schwammdruck-Index...').openPopup(e.latlng);
-                    const weather = await fetchWeatherData(e.latlng.lat, e.latlng.lng);
-                    let distText = userCoords ? `📍 Entfernung: <b>${calculateDistance(userCoords.lat, userCoords.lon, e.latlng.lat, e.latlng.lng).toFixed(1)} km</b>` : '';
-                    
-                    layer.setPopupContent(`
-                        <div class="weather-popup">
-                            <h3>Schwammdruck-Index: ${weather.score}%</h3>
-                            <div class="score-bar-bg"><div class="score-bar-fill" style="width: ${weather.score}%;"></div></div>
-                            <div style="font-size:12px; margin-top:6px;">💧 Regen (14 Tage): <b>${weather.rainTotal} mm</b></div>
-                            <div style="font-size:12px;">🌡️ Ø Temp: <b>${weather.tempAvg} °C</b></div>
-                            <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${distText}</div>
+                return `
+                    <div class="bg-stone-800/70 border border-stone-800 rounded-2xl overflow-hidden shadow-lg hover:border-stone-700 transition-all group flex flex-col justify-between">
+                        <div>
+                            <!-- Header Image & Badges -->
+                            <div class="relative h-48 overflow-hidden bg-stone-900">
+                                <img src="${defaultImg}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent opacity-80"></div>
+                                
+                                <div class="absolute top-3 left-3">
+                                    ${edibilityBadge}
+                                </div>
+
+                                <!-- Delete Button -->
+                                <button onclick="deleteFund(event, '${item.id}')" title="Fund löschen" 
+                                        class="absolute top-3 right-3 w-8 h-8 rounded-xl bg-stone-900/80 hover:bg-red-600 text-stone-300 hover:text-white transition-colors flex items-center justify-center backdrop-blur-sm border border-stone-700/50">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+
+                                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-stone-300">
+                                    <span class="flex items-center space-x-1.5 bg-stone-900/70 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                                        <i class="fa-regular fa-calendar text-emerald-400"></i>
+                                        <span>${formatDate(item.date)}</span>
+                                    </span>
+                                    ${item.images.length > 1 ? `<span class="bg-stone-900/70 px-2 py-1 rounded-lg backdrop-blur-sm"><i class="fa-regular fa-images mr-1"></i>${item.images.length}</span>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4">
+                                <h3 class="font-bold text-stone-100 text-base group-hover:text-emerald-400 transition-colors line-clamp-1">${item.name}</h3>
+                                <p class="text-xs text-stone-400 flex items-center space-x-1 mt-1">
+                                    <i class="fa-solid fa-location-dot text-emerald-500"></i>
+                                    <span class="truncate">${item.location}</span>
+                                </p>
+                                <p class="text-stone-300 text-xs mt-3 line-clamp-2 leading-relaxed bg-stone-900/40 p-2 rounded-lg border border-stone-800/50">
+                                    ${item.notes || 'Keine detaillierten Merkmale eingetragen.'}
+                                </p>
+                            </div>
                         </div>
-                    `);
-                });
-            }
-        }).addTo(forestLayer);
-        document.getElementById('status').innerText = `${geojson.features.length} Waldflächen geladen!`;
-    }
 
-    function osmtogeojson(data) {
-        let nodes = {};
-        data.elements.forEach(el => { if (el.type === 'node') nodes[el.id] = [el.lon, el.lat]; });
-        let features = [];
-        data.elements.forEach(el => {
-            if (el.type === 'way' && el.nodes) {
-                let coords = el.nodes.map(id => nodes[id]).filter(c => c !== undefined);
-                if (coords.length > 3) features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: el.tags || {} });
-            }
-        });
-        return { type: "FeatureCollection", features: features };
-    }
+                        <!-- Footer Action -->
+                        <div class="px-4 pb-4 pt-1">
+                            <button onclick="openDetailModal('${item.id}')" 
+                                    class="w-full bg-stone-700/50 hover:bg-emerald-600/20 hover:border-emerald-500/40 border border-stone-700/60 text-stone-200 hover:text-emerald-300 py-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-all">
+                                <span>Details & Blickwinkel</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
-    function triggerPilzFetch(val) {
-        const infoBox = document.getElementById('habitatInfo');
-        if (HABITAT_DATA[val]) {
-            const data = HABITAT_DATA[val];
-            infoBox.style.display = 'block';
-            infoBox.innerHTML = `
-                <div class="info-tag-group">
-                    <div class="info-tag"><span class="badge badge-tree">Bäume</span> ${data.baeume}</div>
-                    <div class="info-tag"><span class="badge badge-plant">Zeiger</span> ${data.zeiger}</div>
-                    <div class="info-tag"><span class="badge badge-soil">Boden</span> ${data.boden}</div>
-                    <div class="info-tag"><span class="badge badge-danger">Achtung</span> ${data.gefahr}</div>
+        function getEdibilityBadge(type) {
+            switch(type) {
+                case 'Speisepilz':
+                    return `<span class="bg-emerald-500/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center space-x-1"><i class="fa-solid fa-utensils"></i><span>Speisepilz</span></span>`;
+                case 'Giftig':
+                    return `<span class="bg-red-500/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center space-x-1"><i class="fa-solid fa-skull-crossbones"></i><span>Giftig</span></span>`;
+                case 'Ungenießbar':
+                    return `<span class="bg-amber-500/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center space-x-1"><i class="fa-solid fa-triangle-exclamation"></i><span>Ungenießbar</span></span>`;
+                default:
+                    return `<span class="bg-stone-700/90 text-stone-200 text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center space-x-1"><i class="fa-solid fa-question"></i><span>Unbekannt</span></span>`;
+            }
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            const parts = dateStr.split('-');
+            if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            return dateStr;
+        }
+
+        // Delete Handler
+        function deleteFund(event, id) {
+            event.stopPropagation();
+            if(confirm('Möchtest du diesen Fund wirklich unwiderruflich aus deinem Register löschen?')) {
+                fungiList = fungiList.filter(f => f.id !== id);
+                saveToLocalStorage();
+                renderGrid();
+            }
+        }
+
+        // Modal Controls
+        function openDetailModal(id) {
+            const item = fungiList.find(f => f.id === id);
+            if(!item) return;
+
+            const container = document.getElementById('detailContent');
+            const imagesHtml = (item.images || []).map((img, idx) => `
+                <div class="relative rounded-xl overflow-hidden bg-stone-800 border border-stone-700/50">
+                    <img src="${img}" alt="Winkel ${idx+1}" class="w-full h-48 object-cover">
+                    <span class="absolute bottom-2 left-2 bg-stone-900/80 text-stone-300 text-[10px] px-2 py-0.5 rounded-md backdrop-blur-sm">Perspektive ${idx+1}</span>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="p-6">
+                    <div class="flex items-center space-x-2 mb-2">
+                        ${getEdibilityBadge(item.edibility)}
+                        <span class="text-xs text-stone-400"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(item.date)}</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-stone-100 mb-1">${item.name}</h2>
+                    <p class="text-sm text-emerald-400 flex items-center space-x-1 mb-6">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>${item.location}</span>
+                    </p>
+
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Dokumentierte Blickwinkel / Fotos</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        ${imagesHtml || '<p class="text-xs text-stone-500">Keine Fotos vorhanden.</p>'}
+                    </div>
+
+                    <div class="bg-stone-800/50 border border-stone-800 rounded-xl p-4 mb-6">
+                        <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Schnittbild & Bestimmungsmerkmale</h4>
+                        <p class="text-stone-200 text-sm leading-relaxed">${item.notes || 'Keine Merkmale eingetragen.'}</p>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4 border-t border-stone-800">
+                        <button onclick="deleteFund(event, '${item.id}'); closeDetailModal();" class="text-red-400 hover:text-red-300 text-xs font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Fund entfernen</span>
+                        </button>
+                        <button onclick="closeDetailModal()" class="bg-stone-800 hover:bg-stone-700 text-stone-200 px-4 py-2 rounded-xl text-xs font-medium">
+                            Schließen
+                        </button>
+                    </div>
                 </div>
             `;
-            fetchForests(data.tag);
-        } else {
-            infoBox.style.display = 'none';
-            forestLayer.clearLayers();
+
+            document.getElementById('detailModal').classList.remove('hidden');
         }
-    }
 
-    document.getElementById('pilzSelect').addEventListener('change', (e) => triggerPilzFetch(e.target.value));
-</script>
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
 
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+        }
+
+        function saveNewFund(event) {
+            event.preventDefault();
+            const name = document.getElementById('addName').value;
+            const date = document.getElementById('addDate').value;
+            const edibility = document.getElementById('addEdibility').value;
+            const location = document.getElementById('addLocation').value;
+            const imageUrl = document.getElementById('addImage').value;
+            const notes = document.getElementById('addNotes').value;
+
+            const newEntry = {
+                id: 'fund-' + Date.now(),
+                name,
+                date,
+                edibility,
+                location,
+                notes,
+                images: imageUrl ? [imageUrl] : ["https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=800&q=80"]
+            };
+
+            fungiList.unshift(newEntry);
+            saveToLocalStorage();
+            renderGrid();
+            closeAddModal();
+            document.getElementById('addFundForm').reset();
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
 </body>
 </html>
