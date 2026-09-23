@@ -266,7 +266,7 @@
                 try {
                     const eleRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=elevation`);
                     const eleData = await eleRes.json();
-                    if (eleData.elevation) eleText = `<br>Höhe: ~${eleData.elevation}m ü. NHN`;
+                    if (eleData.elevation !== undefined) eleText = `<br>Höhe: ~${Math.round(eleData.elevation)}m ü. NHN`;
                 } catch {}
 
                 if (userMarker) map.removeLayer(userMarker);
@@ -279,23 +279,47 @@
         );
     });
 
-    // Wetter & Bodenfeuchte-Abfrage
+    // Korrigierte Wetter- & Bodenfeuchte-Abfrage
     async function fetchWeatherData(lat, lon) {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&daily=precipitation_sum,temperature_2m_mean&current=elevation&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&forecast_days=1&daily=precipitation_sum,temperature_2m_mean&timezone=auto`;
+        
         const res = await fetch(url);
+        if (!res.ok) throw new Error("Wetterdaten konnte nicht geladen werden");
         const data = await res.json();
+        
         const sums = data.daily?.precipitation_sum || [];
         const temps = data.daily?.temperature_2m_mean || [];
         
-        const rainTotal = Math.round((sums.reduce((a, b) => a + (b || 0), 0)) * 10) / 10;
-        const tempAvg = Math.round((temps.reduce((a, b) => a + (b || 0), 0) / (temps.length || 1)) * 10) / 10;
-        const elevation = data.elevation || 0;
+        let rainTotal = 0;
+        sums.forEach(val => {
+            if (typeof val === 'number' && !isNaN(val)) {
+                rainTotal += val;
+            }
+        });
+        rainTotal = Math.round(rainTotal * 10) / 10;
+
+        let tempSum = 0;
+        let tempCount = 0;
+        temps.forEach(val => {
+            if (typeof val === 'number' && !isNaN(val)) {
+                tempSum += val;
+                tempCount++;
+            }
+        });
+        const tempAvg = tempCount > 0 ? Math.round((tempSum / tempCount) * 10) / 10 : 15;
+        
+        let elevation = 0;
+        try {
+            const eleRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=elevation`);
+            const eleData = await eleRes.json();
+            elevation = Math.round(eleData.elevation || 0);
+        } catch {}
 
         return { rainTotal, tempAvg, elevation };
     }
 
     function getPrognose(rain, temp) {
-        if (rain < 10) return { text: 'Niedrig 🔴 (Zu trocken)', css: 'prognose-niedrig' };
+        if (rain < 10) return { text: 'Niedrig 🔴 (Geringer Regen)', css: 'prognose-niedrig' };
         if (rain <= 25 && temp >= 12) return { text: 'Mittel 🟡 (Gute Bedingungen)', css: 'prognose-mittel' };
         if (rain > 25 && temp >= 10) return { text: 'Hoch 🟢 (Optimale Feuchte & Wärme!)', css: 'prognose-hoch' };
         return { text: 'Mittel 🟡 (Feucht, aber kühl)', css: 'prognose-mittel' };
@@ -314,7 +338,12 @@
         fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
         .then(res => res.json())
         .then(data => renderGeoJson(data))
-        .catch(() => status.innerText = "Fehler beim Laden der Waldflächen.");
+        .catch(() => {
+            fetch('https://overpass.kumi.systems/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
+            .then(res => res.json())
+            .then(data => renderGeoJson(data))
+            .catch(() => status.innerText = "Fehler beim Laden der Waldflächen.");
+        });
     }
 
     function renderGeoJson(data) {
