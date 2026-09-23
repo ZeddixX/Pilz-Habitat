@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -338,14 +337,50 @@
     let trackPath = [];
     let polylineLayer = L.polyline([], { color: '#ea580c', weight: 4, dashArray: '6, 8' }).addTo(map);
 
-    // Habitat-Datenbank für Pilze
+    // Detaillierte Habitat-Datenbank mit Zeigerpilzen & Begleitvegetation
     const HABITAT_DATA = {
-        steinpilz: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Buchen, Eichen, Kiefern', zeiger: 'Fliegenpilz, Heidelbeersträucher', boden: 'Saurer Boden', gefahr: '⚠️ Gallenröhrling' },
-        marone: { tag: '["leaf_type"="needleleaved"]', baeume: 'Fichten, Kiefern', zeiger: 'Dichte Moospolster', boden: 'Saurer Nadelwaldboden', gefahr: '⚠️ Gallenröhrling' },
-        fliegenpilz: { tag: '["leaf_type"~"needleleaved|mixed"]', baeume: 'Fichten, Birken', zeiger: 'Zeigt Steinpilze an!', boden: 'Saurer Waldboden', gefahr: '⚠️ Giftig!' },
-        pfifferling: { tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', baeume: 'Fichten, Kiefern, Buchen', zeiger: 'Lichte Moosstellen', boden: 'Nährstoffarm', gefahr: '⚠️ Falscher Pfifferling' },
-        birkenpilz: { tag: '["leaf_type"~"broadleaved|mixed"]', baeume: 'Birken', zeiger: 'Birkenhaine', boden: 'Feuchte Böden', gefahr: '⚠️ Bittere Röhrlinge' },
-        parasol: { tag: '', baeume: 'Mischwaldränder', zeiger: 'Waldgräser', boden: 'Humusreich', gefahr: '⚠️ Gift-Riesenschirmling' }
+        steinpilz: { 
+            tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', 
+            baeume: 'Fichten, Buchen, Eichen, Kiefern', 
+            zeiger: 'Fliegenpilz, Heidelbeersträucher, Farn', 
+            boden: 'Saurer bis neutraler Boden, gut durchlüftet', 
+            gefahr: '⚠️ Gallenröhrling (bitter, rosa Poren)' 
+        },
+        marone: { 
+            tag: '["leaf_type"="needleleaved"]', 
+            baeume: 'Fichten, alte Kiefern', 
+            zeiger: 'Dichte Moospolster, Preiselbeerkraut', 
+            boden: 'Saurer Nadelwaldboden', 
+            gefahr: '⚠️ Gallenröhrling' 
+        },
+        fliegenpilz: { 
+            tag: '["leaf_type"~"needleleaved|mixed"]', 
+            baeume: 'Fichten, Birken, Kiefern', 
+            zeiger: 'Gilt selbst als bester Zeigerpilz (zeigt oft Steinpilz-Nähe!)', 
+            boden: 'Saurer Waldboden', 
+            gefahr: '⚠️ Giftig!' 
+        },
+        pfifferling: { 
+            tag: '["leaf_type"~"needleleaved|broadleaved|mixed"]', 
+            baeume: 'Fichten, Kiefern, Buchen, Eichen', 
+            zeiger: 'Lichte Moosstellen, Grasstreifen im lichten Wald', 
+            boden: 'Nährstoffarm, sandig-sauer', 
+            gefahr: '⚠️ Falscher Pfifferling (giftig, weiches Fleisch)' 
+        },
+        birkenpilz: { 
+            tag: '["leaf_type"~"broadleaved|mixed"]', 
+            baeume: 'Ausschließlich unter Birken', 
+            zeiger: 'Grasiges Waldrand-Biotop, Moorgebiete', 
+            boden: 'Feuchte, saure Böden', 
+            gefahr: '⚠️ Bittere Röhrlinge' 
+        },
+        parasol: { 
+            tag: '', 
+            baeume: 'Mischwaldränder, Lichtungen, lichte Nadelwälder', 
+            zeiger: 'Waldgräser, Brennnessel-Säume, Wegränder', 
+            boden: 'Humusreich, stickstoffarm', 
+            gefahr: '⚠️ Gift-Riesenschirmling (ringst sich ein, läuft rötlich)' 
+        }
     };
 
     window.flyToRegion = function(lat, lng, zoom, name) {
