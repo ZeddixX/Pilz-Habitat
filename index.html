@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilz-Habitat-Finder Dark</title>
+    <title>Pilz-Habitat-Finder Pro Dark</title>
     
     <!-- PWA Integration -->
     <link rel="manifest" href="manifest.json">
@@ -94,6 +94,11 @@
         .btn-gps:hover { background: #0369a1; }
         .btn-spot { width: 100%; background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
         .btn-spot:hover { background: #8b5cf6; }
+        .btn-track { width: 100%; background: #ea580c; color: white; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); }
+        .btn-track.active { background: #dc2626; animation: pulse 1.5s infinite; }
+        
+        .btn-group-row { display: flex; gap: 8px; }
+        .btn-secondary { flex: 1; background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); }
         
         .btn-tile { 
             position: absolute; bottom: 24px; left: 16px; z-index: 1000; 
@@ -117,14 +122,9 @@
         
         #status { font-size: 12px; font-weight: 500; color: #94a3b8; }
         
-        /* Custom Spot Icon Style */
-        .custom-spot-icon {
-            background: transparent;
-            border: none;
-            font-size: 20px;
-            text-align: center;
-            line-height: 24px;
-        }
+        /* Custom Icons */
+        .custom-spot-icon { background: transparent; border: none; font-size: 20px; text-align: center; line-height: 24px; }
+        .user-heading-icon { font-size: 24px; transition: transform 0.2s ease; text-shadow: 0 0 10px rgba(52,211,153,0.8); }
 
         /* Leaflet Popups Dark */
         .leaflet-popup-content-wrapper { 
@@ -142,6 +142,12 @@
         .prognose-niedrig { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
         .prognose-mittel  { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
         .prognose-hoch    { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -159,8 +165,15 @@
             <button id="searchBtn" class="btn btn-primary">Suchen</button>
         </div>
 
-        <button id="locBtn" class="btn btn-gps">📍 Standort & Höhe ermitteln</button>
+        <button id="locBtn" class="btn btn-gps">📍 Standort & Kompass</button>
+        <button id="trackBtn" class="btn btn-track">🐾 Route aufzeichnen (GPS)</button>
         <button id="spotBtn" class="btn btn-spot">⭐ Geheimen Fundort speichern</button>
+
+        <div class="btn-group-row">
+            <button id="exportBtn" class="btn btn-secondary">📤 Export</button>
+            <button id="importBtn" class="btn btn-secondary">📥 Import</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+        </div>
 
         <!-- Pilzauswahl -->
         <select id="pilzSelect" class="input-field" style="width: 100%;">
@@ -236,6 +249,12 @@
     let forestLayer = L.layerGroup().addTo(map);
     let spotLayer = L.layerGroup().addTo(map);
     let userMarker = null;
+
+    // GPS Tracking Vars
+    let isTracking = false;
+    let watchId = null;
+    let trackPath = [];
+    let polylineLayer = L.polyline([], { color: '#ea580c', weight: 4, dashArray: '6, 8' }).addTo(map);
 
     // Habitat-Datenbank
     const HABITAT_DATA = {
@@ -322,6 +341,39 @@
         loadSavedSpots();
     };
 
+    // Export & Import der Fundorte
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const saved = localStorage.getItem('pilz_spots') || '[]';
+        const blob = new Blob([saved], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `pilz_fundorte_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    });
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const data = JSON.parse(evt.target.result);
+                if (Array.isArray(data)) {
+                    localStorage.setItem('pilz_spots', JSON.stringify(data));
+                    loadSavedSpots();
+                    document.getElementById('status').innerText = "Fundorte erfolgreich importiert!";
+                }
+            } catch {
+                document.getElementById('status').innerText = "Ungültige Datei!";
+            }
+        };
+        reader.readAsText(file);
+    });
+
     loadSavedSpots();
 
     // Städtesuche
@@ -344,7 +396,7 @@
 
     document.getElementById('searchBtn').addEventListener('click', searchCity);
 
-    // GPS-Ortung + Höhe
+    // GPS-Ortung + Höhe + Kompass
     document.getElementById('locBtn').addEventListener('click', () => {
         const status = document.getElementById('status');
         if (!navigator.geolocation) { status.innerText = "GPS nicht verfügbar."; return; }
@@ -352,7 +404,7 @@
             async (pos) => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
-                map.setView([lat, lon], 13);
+                map.setView([lat, lon], 14);
                 
                 let eleText = '';
                 try {
@@ -362,8 +414,28 @@
                 } catch {}
 
                 if (userMarker) map.removeLayer(userMarker);
-                userMarker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>Dein Standpunkt</b>${eleText}`).openPopup();
-                status.innerText = "Standort lokalisiert.";
+                
+                const headingIcon = L.divIcon({
+                    className: 'user-heading-icon',
+                    html: '<div id="userHeadingArrow">🧭</div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                userMarker = L.marker([lat, lon], { icon: headingIcon }).addTo(map).bindPopup(`<b>Dein Standpunkt</b>${eleText}`).openPopup();
+                status.innerText = "Standort lokalisiert. Kompass aktiv!";
+                
+                // Kompass aktivieren
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', (e) => {
+                        let alpha = e.alpha || e.webkitCompassHeading;
+                        if (alpha !== null) {
+                            const arrow = document.getElementById('userHeadingArrow');
+                            if (arrow) arrow.style.transform = `rotate(${360 - alpha}deg)`;
+                        }
+                    }, true);
+                }
+
                 const selectedPilz = document.getElementById('pilzSelect').value;
                 if (selectedPilz) triggerPilzFetch(selectedPilz);
             },
@@ -371,7 +443,35 @@
         );
     });
 
-    // Korrigierte Wetter- & Bodenfeuchte-Abfrage
+    // GPS-Track Aufzeichnung
+    document.getElementById('trackBtn').addEventListener('click', () => {
+        const trackBtn = document.getElementById('trackBtn');
+        const status = document.getElementById('status');
+
+        if (!isTracking) {
+            if (!navigator.geolocation) { status.innerText = "GPS nicht unterstützt."; return; }
+            isTracking = true;
+            trackBtn.classList.add('active');
+            trackBtn.innerText = "🛑 Aufzeichnung stoppen";
+            status.innerText = "Route wird aufgezeichnet...";
+
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                trackPath.push([lat, lon]);
+                polylineLayer.setLatLngs(trackPath);
+            }, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 });
+
+        } else {
+            isTracking = false;
+            navigator.geolocation.clearWatch(watchId);
+            trackBtn.classList.remove('active');
+            trackBtn.innerText = "🐾 Route aufzeichnen (GPS)";
+            status.innerText = `Route gespeichert (${trackPath.length} Punkte).`;
+        }
+    });
+
+    // Wetter- & Bodenfeuchte-Abfrage
     async function fetchWeatherData(lat, lon) {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=10&forecast_days=1&daily=precipitation_sum,temperature_2m_mean&timezone=auto`;
         
@@ -417,7 +517,7 @@
         return { text: 'Mittel 🟡 (Feucht, aber kühl)', css: 'prognose-mittel' };
     }
 
-    // Walddaten abrufen
+    // Walddaten abrufen & Offline-Caching
     function fetchForests(filterTag) {
         const status = document.getElementById('status');
         if (map.getZoom() < 11) { status.innerText = "Bitte näher heranzoomen!"; return; }
@@ -427,14 +527,25 @@
         const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
         const query = `[out:json][timeout:25];(way["landuse"="forest"]${filterTag}(${bbox});relation["landuse"="forest"]${filterTag}(${bbox});way["natural"="wood"]${filterTag}(${bbox});relation["natural"="wood"]${filterTag}(${bbox}););out body;>;out skel qt;`;
 
+        const cacheKey = `cache_${filterTag}_${bbox}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
         fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
         .then(res => res.json())
-        .then(data => renderGeoJson(data))
+        .then(data => {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+            renderGeoJson(data);
+        })
         .catch(() => {
-            fetch('https://overpass.kumi.systems/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
-            .then(res => res.json())
-            .then(data => renderGeoJson(data))
-            .catch(() => status.innerText = "Fehler beim Laden der Waldflächen.");
+            if (cachedData) {
+                status.innerText = "Offline: Verwende gecachte Walddaten!";
+                renderGeoJson(JSON.parse(cachedData));
+            } else {
+                fetch('https://overpass.kumi.systems/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) })
+                .then(res => res.json())
+                .then(data => renderGeoJson(data))
+                .catch(() => status.innerText = "Fehler beim Laden der Waldflächen.");
+            }
         });
     }
 
